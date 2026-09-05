@@ -26,10 +26,7 @@
       (e.racha.dias > 1 ? '<span class="hud-racha">🔥 ' + e.racha.dias + '</span>' : '') +
       '<button class="hud-papa" id="hudPapa" aria-label="Panel de papá">👤</button>';
     var a = document.getElementById("hudAvatar");
-    // con varios jugadores, tocar el avatar es cambiar de jugador
-    if (a) a.addEventListener("click", function () {
-      irA(Alm.perfiles().length > 1 ? "perfiles" : "casa");
-    });
+    if (a) a.addEventListener("click", function () { irA("casa"); });
     var p = document.getElementById("hudPapa");
     if (p) p.addEventListener("click", pedirPin);
   }
@@ -80,53 +77,82 @@
         '<div class="portada-acc"></div>' +
       '</section>';
     var acc = el.querySelector(".portada-acc");
-    acc.appendChild(J.ui.boton("▶ START", "btn-primario btn-grande", function () {
-      irA("avatar", { nuevo: true });
+    acc.appendChild(J.ui.boton("▶ LOG IN", "btn-primario btn-grande", function () {
+      irA("entrar");
     }));
   };
 
-  /* --- elegir quién juega ------------------------------------------------- */
+  /* --- entrar con usuario y contraseña ------------------------------------
+     Con solo avatares, un chico se mete sin querer en la cuenta de otro y
+     arruina los datos de los dos. Por eso: usuario y contraseña de verdad.
+     Las cuentas las crea el adulto desde su panel — esa es la autorización. */
 
-  pantallas.perfiles = function (el) {
-    var lista = Alm.perfiles();
+  var ERRORES = {
+    "datos-incorrectos": "Usuario o contraseña incorrectos.",
+    "usuario-invalido": "El usuario va sin espacios ni acentos, de 3 a 20 letras.",
+    "usuario-ocupado": "Ese usuario ya existe. Elegí otro.",
+    "clave-corta": "La contraseña necesita al menos 6 caracteres.",
+    "sin-conexion": "No hay conexión con el servidor.",
+    "falta-apagar-confirmacion":
+      "Falta apagar la confirmación por correo en Supabase: " +
+      "Authentication → Sign In / Providers → Email → Confirm email → OFF."
+  };
+
+  pantallas.entrar = function (el) {
     el.innerHTML =
       '<section class="pantalla centro">' +
-        '<h2 class="tit">Who\'s playing?</h2>' +
-        '<p class="sub">¿Quién juega?</p>' +
-        '<div class="perfiles" id="ps"></div>' +
-        '<div class="acc" id="acc"></div>' +
+        '<div class="portada-logo">' + logoSvg() + '</div>' +
+        '<h2 class="tit">Log in</h2>' +
+        '<p class="sub">Escribí tu usuario y tu contraseña</p>' +
+        '<form class="form-login" id="f">' +
+          '<div class="campo">' +
+            '<label for="u">Username</label>' +
+            '<input id="u" class="entrada" autocomplete="username" ' +
+              'autocapitalize="none" autocorrect="off" spellcheck="false" ' +
+              'maxlength="20" placeholder="gabriel">' +
+          '</div>' +
+          '<div class="campo">' +
+            '<label for="c">Password</label>' +
+            '<div class="campo-clave">' +
+              '<input id="c" class="entrada" type="password" ' +
+                'autocomplete="current-password" maxlength="40">' +
+              '<button type="button" class="ver-clave" id="ver">👁</button>' +
+            '</div>' +
+          '</div>' +
+          '<p class="error" id="err" hidden></p>' +
+          '<button class="btn btn-primario btn-grande" type="submit" id="go">Enter</button>' +
+        '</form>' +
+        '<p class="nota">¿No tenés cuenta? La crea papá desde su panel.</p>' +
       '</section>';
 
-    var cont = el.querySelector("#ps");
-    lista.forEach(function (p) {
-      var b = document.createElement("button");
-      b.className = "perfil";
-      b.innerHTML =
-        '<span class="perfil-av">' + N.Avatar.svg(p.avatar, 74) + '</span>' +
-        '<span class="perfil-nom">' + U.esc(p.nombre) + '</span>' +
-        (p.nube ? '<span class="perfil-nube">☁ sincroniza</span>'
-                : '<span class="perfil-local">solo este aparato</span>');
-      b.addEventListener("click", function () {
-        Alm.cambiarPerfil(p.id);
-        var e = Alm.leer();
-        irA(!e.jugador.avatar ? "avatar" : !e.diagnostico.hecho ? "introDiag" : "casa");
-      });
-      cont.appendChild(b);
+    var err = el.querySelector("#err");
+    el.querySelector("#ver").addEventListener("click", function () {
+      var c = el.querySelector("#c");
+      c.type = c.type === "password" ? "text" : "password";
     });
 
-    if (lista.length < 6) {
-      var mas = document.createElement("button");
-      mas.className = "perfil perfil-mas";
-      mas.innerHTML = '<span class="perfil-plus">+</span><span class="perfil-nom">New player</span>';
-      mas.addEventListener("click", function () { irA("avatar", { nuevo: true }); });
-      cont.appendChild(mas);
-    }
+    el.querySelector("#f").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var b = el.querySelector("#go");
+      err.hidden = true;
+      b.disabled = true; b.textContent = "Entrando…";
+      N.Auth.entrar(el.querySelector("#u").value, el.querySelector("#c").value)
+        .then(function (r) {
+          if (r.ok) {
+            Alm.olvidar();
+            Alm.adoptarRemoto();
+            return rutear();
+          }
+          err.textContent = ERRORES[r.error] || r.error;
+          err.hidden = false;
+          b.disabled = false; b.textContent = "Enter";
+        });
+    });
   };
 
   pantallas.avatar = function (el, datos) {
-    var esNuevo = !!(datos && datos.nuevo);
-    var e = esNuevo ? null : Alm.leer();
-    var a = (e && e.jugador.avatar) || N.Avatar.porDefecto();
+    var e = Alm.leer();
+    var a = e.jugador.avatar || N.Avatar.porDefecto();
 
     el.innerHTML =
       '<section class="pantalla">' +
@@ -137,12 +163,8 @@
         '<div class="campo">' +
           '<label for="nom">Your name</label>' +
           '<input id="nom" class="entrada" maxlength="14" placeholder="Gabriel" value="' +
-            U.esc((e && e.jugador.nombre) || "") + '">' +
+            U.esc(e.jugador.nombre || N.Auth.miNombre() || "") + '">' +
         '</div>' +
-        (esNuevo && !Alm.esPrueba() ?
-          '<label class="ajuste"><input type="checkbox" id="sync">' +
-          ' Guardar el progreso en la nube (para verlo desde otro aparato). ' +
-          'Dejalo apagado si el jugador no es de tu familia.</label>' : "") +
         '<div class="acc" id="acc"></div>' +
       '</section>';
 
@@ -201,25 +223,13 @@
 
     el.querySelector("#acc").appendChild(
       J.ui.boton("Ready →", "btn-primario btn-grande", function () {
-        var nombre = (el.querySelector("#nom").value || "Player").trim();
-        if (esNuevo) {
-          var sync = el.querySelector("#sync");
-          Alm.crearPerfil(nombre, a, sync && sync.checked);
-        } else {
-          var e2 = Alm.leer();
-          e2.jugador.avatar = a;
-          e2.jugador.nombre = nombre;
-          if (!e2.jugador.creado) e2.jugador.creado = Date.now();
-          Alm.guardar();
-        }
-        var d = Alm.leer();
-        irA(d.diagnostico.hecho ? "casa" : "introDiag");
+        var e2 = Alm.leer();
+        e2.jugador.avatar = a;
+        e2.jugador.nombre = (el.querySelector("#nom").value || "Player").trim();
+        if (!e2.jugador.creado) e2.jugador.creado = Date.now();
+        Alm.guardar();
+        irA(e2.diagnostico.hecho ? "casa" : "introDiag");
       }));
-
-    if (!esNuevo && Alm.perfiles().length > 1) {
-      el.querySelector("#acc").appendChild(
-        J.ui.boton("← Cambiar de jugador", "btn-fantasma", function () { irA("perfiles"); }));
-    }
   };
 
   function logoSvg() {
@@ -680,8 +690,8 @@
           '<button data-t="jugadores" class="tab">Jugadores</button>' +
           '<button data-t="ajustes" class="tab">Ajustes</button>' +
         '</nav>' +
-        '<p class="panel-quien">Viendo los datos de <b>' +
-          U.esc((Alm.perfilActivo() || {}).nombre || "—") + '</b></p>' +
+        '<p class="panel-quien">Sesión de <b>' +
+          U.esc(N.Auth.miNombre() || (Alm.esPrueba() ? "modo prueba" : "—")) + '</b></p>' +
         '<div id="panelCuerpo"></div>' +
       '</section>';
     el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
@@ -706,72 +716,90 @@
       return ajustes(e);
     }
 
-    /* --- administrar quién juega ------------------------------------------ */
+    /* --- cuentas y chicos a cargo ----------------------------------------- */
     function jugadores() {
-      var lista = Alm.perfiles();
-      var activo = Alm.perfilActivo() || {};
+      if (Alm.esPrueba()) {
+        cuerpo.innerHTML = '<p class="nota">Estás en modo prueba, sin cuenta. ' +
+          'Salí del modo prueba para administrar jugadores.</p>';
+        return;
+      }
+      var codigo = N.Auth.miCodigo();
       cuerpo.innerHTML =
-        '<p class="nota">Cada jugador tiene su propio progreso, su avatar y sus ' +
-        'esmeraldas. El panel muestra siempre los datos del que está activo.</p>' +
-        '<div class="jug-lista" id="jl"></div>' +
-        '<div class="acc" id="accJug"></div>';
+        '<h3 class="panel-h3">Tu código de familia</h3>' +
+        '<p class="codigo-familia">' + U.esc(codigo || "—") + '</p>' +
+        '<p class="nota">Cuando crees la cuenta de un chico con este código, su ' +
+        'progreso te aparece acá abajo. Él no puede ver el tuyo, y vos no podés ' +
+        'modificar el suyo — solo leerlo. Eso es a propósito: si el adulto pudiera ' +
+        'editar los resultados, los datos dejarían de servir para decidir qué ' +
+        'trabajar.</p>' +
+        '<h3 class="panel-h3">Crear una cuenta</h3>' +
+        '<div class="crear-cuenta">' +
+          '<input class="entrada" id="nu" placeholder="usuario (sin espacios)" ' +
+            'autocapitalize="none" autocorrect="off" maxlength="20">' +
+          '<input class="entrada" id="nn" placeholder="nombre visible" maxlength="14">' +
+          '<input class="entrada" id="nc" placeholder="contraseña (6+)" maxlength="40">' +
+          '<label class="ajuste"><input type="checkbox" id="nv" checked> ' +
+            'Vincular a mi código para poder ver su progreso</label>' +
+          '<p class="error" id="nerr" hidden></p>' +
+        '</div>' +
+        '<div class="acc" id="accCrear"></div>' +
+        '<h3 class="panel-h3">Chicos a tu cargo</h3>' +
+        '<div id="chicos"><p class="nota">Cargando…</p></div>';
 
-      var jl = cuerpo.querySelector("#jl");
-      lista.forEach(function (p) {
-        var d = document.createElement("div");
-        d.className = "jug" + (p.id === activo.id ? " jug-activo" : "");
-        d.innerHTML =
-          '<span class="jug-av">' + N.Avatar.svg(p.avatar, 42) + '</span>' +
-          '<span class="jug-info"><b>' + U.esc(p.nombre) + '</b>' +
-          '<em>' + (p.nube ? "sincroniza con la nube" : "solo en este aparato") + '</em></span>';
+      var nerr = cuerpo.querySelector("#nerr");
+      cuerpo.querySelector("#accCrear").appendChild(
+        J.ui.boton("Crear cuenta", "btn-primario", function () {
+          var b = this;
+          var u = cuerpo.querySelector("#nu").value.trim();
+          var n = cuerpo.querySelector("#nn").value.trim();
+          var c = cuerpo.querySelector("#nc").value;
+          var v = cuerpo.querySelector("#nv").checked;
+          nerr.hidden = true;
 
-        var acc = document.createElement("span");
-        acc.className = "jug-acc";
+          if (!confirm(
+            "Vas a crear la cuenta \"" + u + "\".\n\n" +
+            "IMPORTANTE: al crearla, esta sesión pasa a ser la del chico. " +
+            "Después vas a tener que volver a entrar con tu usuario.\n\n" +
+            "Si el chico no es de tu familia, pedile permiso al padre o madre antes.\n\n" +
+            "¿Continuar?")) return;
 
-        if (p.id !== activo.id) {
-          var bSel = document.createElement("button");
-          bSel.className = "btn btn-suave";
-          bSel.textContent = "Usar";
-          bSel.addEventListener("click", function () {
-            Alm.cambiarPerfil(p.id); irA("panel");
+          b.disabled = true; b.textContent = "Creando…";
+          N.Auth.crear(u, c, n || u, v ? codigo : null).then(function (r) {
+            if (r.ok) {
+              Alm.olvidar();
+              alert("Cuenta creada.\n\nUsuario: " + u + "\nContraseña: " + c +
+                    "\n\nAnotala. Ahora estás dentro de esa cuenta: armá el avatar " +
+                    "y después salí para volver a la tuya.");
+              return irA("avatar");
+            }
+            nerr.textContent = ERRORES[r.error] || r.error;
+            nerr.hidden = false;
+            b.disabled = false; b.textContent = "Crear cuenta";
           });
-          acc.appendChild(bSel);
-        }
-
-        if (!Alm.esPrueba()) {
-          var bN = document.createElement("button");
-          bN.className = "btn btn-fantasma";
-          bN.textContent = p.nube ? "Dejar de sincronizar" : "Sincronizar";
-          bN.addEventListener("click", function () {
-            if (!p.nube && !confirm(
-              "Al sincronizar, el progreso de " + p.nombre + " se guarda en tu " +
-              "base de Supabase.\n\nSi el jugador no es de tu familia, lo correcto " +
-              "es pedirle permiso al padre o madre antes.\n\n¿Continuar?")) return;
-            Alm.ponerNube(p.id, !p.nube);
-            pintarTab("jugadores");
-          });
-          acc.appendChild(bN);
-        }
-
-        if (lista.length > 1) {
-          var bB = document.createElement("button");
-          bB.className = "btn btn-fantasma";
-          bB.textContent = "Borrar";
-          bB.addEventListener("click", function () {
-            if (!confirm("¿Borrar a " + p.nombre + " y todo su progreso de este aparato?")) return;
-            Alm.borrarPerfil(p.id);
-            irA("panel");
-          });
-          acc.appendChild(bB);
-        }
-        d.appendChild(acc);
-        jl.appendChild(d);
-      });
-
-      cuerpo.querySelector("#accJug").appendChild(
-        J.ui.boton("+ Nuevo jugador", "btn-suave", function () {
-          irA("avatar", { nuevo: true });
         }));
+
+      N.Auth.misChicos().then(function (lista) {
+        var cont = cuerpo.querySelector("#chicos");
+        if (!cont) return;
+        if (!lista.length) {
+          cont.innerHTML = '<p class="nota">Todavía no hay ninguno vinculado.</p>';
+          return;
+        }
+        cont.innerHTML = '<div class="jug-lista">' + lista.map(function (x) {
+          var d = x.datos || {};
+          var pal = d.palabras ? Object.keys(d.palabras).length : 0;
+          var dom = d.palabras ? Object.keys(d.palabras).filter(function (p) {
+            return d.palabras[p].verde >= 2 && d.palabras[p].ultima === "verde";
+          }).length : 0;
+          return '<div class="jug">' +
+            '<span class="jug-av">' + N.Avatar.svg(d.jugador && d.jugador.avatar, 42) + '</span>' +
+            '<span class="jug-info"><b>' + U.esc(x.nombre || x.usuario) + '</b>' +
+            '<em>' + (d.esmeraldas || 0) + ' esmeraldas · ' + dom + ' de ' + pal +
+            ' palabras dominadas' +
+            (x.actualizado ? ' · ' + new Date(x.actualizado).toLocaleDateString() : "") +
+            '</em></span></div>';
+        }).join("") + '</div>';
+      });
     }
 
     function resumen(e) {
@@ -960,8 +988,17 @@
       }));
       accD.appendChild(J.ui.boton("Borrar todo", "btn-fantasma", function () {
         if (!confirm("¿Borrar TODO el progreso? No se puede deshacer.")) return;
-        Alm.reiniciar(); irA("bienvenida");
+        Alm.reiniciar(); irA("casa");
       }));
+      if (!Alm.esPrueba()) {
+        accD.appendChild(J.ui.boton("Cerrar sesión", "btn-fantasma", function () {
+          if (!confirm("¿Cerrar la sesión y volver a la pantalla de entrada?")) return;
+          N.Auth.salir().then(function () {
+            Alm.olvidar();
+            irA("bienvenida");
+          });
+        }));
+      }
     }
   };
 
@@ -993,12 +1030,18 @@
   function arrancar() {
     app = document.getElementById("app");
     hud = document.getElementById("hud");
-    if (Alm.esPrueba()) bannerPrueba();
-    Alm.iniciarSupabase();
+    if (Alm.esPrueba()) { bannerPrueba(); return rutear(); }
 
-    if (!Alm.hayPerfiles()) return irA("bienvenida");
-    if (Alm.perfiles().length > 1) return irA("perfiles");
+    app.innerHTML = '<p class="cargando">Cargando…</p>';
+    N.Auth.restaurar().then(function () {
+      if (!N.Auth.haySesion()) return irA("bienvenida");
+      Alm.adoptarRemoto();   // si otro aparato tiene más avance, se toma ese
+      rutear();
+    });
+  }
 
+  /* a dónde va alguien que ya entró */
+  function rutear() {
     var e = Alm.leer();
     if (!e.jugador.avatar) irA("avatar");
     else if (!e.diagnostico.hecho) irA("introDiag");

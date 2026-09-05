@@ -9,101 +9,187 @@
   var CFG = global.CONFIG || {};
 
   /* ==========================================================================
-     ALMACÉN — guarda el progreso
-     Hoy: localStorage. Mañana: Supabase (mismo interfaz, no cambia nada arriba).
+     AUTH — cuentas de verdad sobre Supabase Auth
+     Cada jugador entra con usuario y contraseña. Nadie puede meterse en la
+     cuenta de otro por tocar el avatar equivocado, y la base solo le muestra
+     a cada uno lo suyo.
+     El "usuario" que escribe el chico se convierte internamente en un correo,
+     porque Supabase Auth trabaja con correos. Ese correo nunca se muestra.
      ======================================================================== */
 
-  var Almacen = (function () {
-    /* MODO PRUEBA — para que el papá pueda jugar sin ensuciar los datos de
-       Gabriel. Se activa agregando ?prueba a la dirección.
-       Hace dos cosas, y las dos importan:
-         1. guarda en OTRA llave del navegador, así no pisa la partida real
-         2. NO crea el cliente de Supabase, así no hay forma de que toque la nube
-       Una ventana de incógnito no alcanzaría: aislaría el navegador pero
-       igual escribiría en la fila 'gabriel' de la base. */
-    var MODO_PRUEBA = /[?&]prueba\b/i.test(location.search) ||
-                      /\bprueba\b/i.test(location.hash);
+  var Auth = (function () {
+    var DOMINIO = "players.blockquest.app";
+    var cli = null;
+    var sesion = null;
+    var fila = null;
 
-    /* PERFILES — varios jugadores en el mismo aparato.
-       Cada uno tiene su progreso, su avatar y sus esmeraldas, guardados en
-       `gaby.p.<id>`. La lista vive en `gaby.perfiles`.
-       Solo se sincroniza a la nube el perfil que tenga `nube` puesto; los
-       demás viven únicamente en el aparato. */
-    var LLAVE_PERFILES = MODO_PRUEBA ? "gaby.prueba.perfiles" : "gaby.perfiles";
-    function llaveDatos(id) {
-      return (MODO_PRUEBA ? "gaby.prueba.p." : "gaby.p.") + id;
+    function correoDe(usuario) {
+      return String(usuario).trim().toLowerCase()
+        .replace(/[^a-z0-9._-]/g, "") + "@" + DOMINIO;
+    }
+    function usuarioValido(u) {
+      return /^[a-zA-Z0-9._-]{3,20}$/.test(String(u || "").trim());
     }
 
-    var indice = null;        // { activo, lista: [ {id,nombre,avatar,nube} ] }
-    var enMemoria = null;     // datos del perfil activo
-    var supa = null;          // cliente Supabase cuando haya claves
-    var pendiente = null;     // debounce de escritura remota
+    function cliente() {
+      if (cli) return cli;
+      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey || !global.supabase) return null;
+      try {
+        cli = global.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, {
+          auth: { persistSession: true, autoRefreshToken: true }
+        });
+      } catch (e) { cli = null; }
+      return cli;
+    }
 
-    function idNuevo() {
-      // id imposible de adivinar: si algún día este perfil se sincroniza,
-      // el id es lo único que lo protege en un sitio público
-      var abc = "abcdefghijkmnpqrstuvwxyz23456789", s = "";
-      var r = new Uint8Array(12);
-      (global.crypto || {}).getRandomValues
-        ? global.crypto.getRandomValues(r)
-        : r.forEach(function (_, i) { r[i] = Math.floor(Math.random() * 256); });
-      for (var i = 0; i < 12; i++) s += abc[r[i] % abc.length];
+    /* Recupera la sesión guardada. Funciona sin internet: el token vive en el
+       navegador, así que el chico entra una vez y después juega aunque no
+       haya conexión. */
+    function restaurar() {
+      var c = cliente();
+      if (!c) return Promise.resolve(null);
+      return c.auth.getSession()
+        .then(function (r) {
+          sesion = r && r.data ? r.data.session : null;
+          return sesion ? traerFila() : null;
+        })
+        .then(function () { return sesion; })
+        .catch(function () { return null; });
+    }
+
+    function traerFila() {
+      var c = cliente();
+      if (!c || !sesion) { fila = null; return Promise.resolve(null); }
+      return c.from("jugadores").select("*").eq("user_id", sesion.user.id).maybeSingle()
+        .then(function (r) { fila = r && r.data ? r.data : null; return fila; })
+        .catch(function () { return null; });
+    }
+
+    function entrar(usuario, clave) {
+      var c = cliente();
+      if (!c) return Promise.resolve({ error: "sin-conexion" });
+      if (!usuarioValido(usuario)) return Promise.resolve({ error: "usuario-invalido" });
+      return c.auth.signInWithPassword({ email: correoDe(usuario), password: String(clave) })
+        .then(function (r) {
+          if (r.error) {
+            return { error: /Invalid login/i.test(r.error.message)
+              ? "datos-incorrectos" : r.error.message };
+          }
+          sesion = r.data.session;
+          return traerFila().then(function () { return { ok: true }; });
+        })
+        .catch(function (e) { return { error: String(e && e.message || e) }; });
+    }
+
+    /* Crear cuenta. La hace el adulto desde su panel: esa es la autorización.
+       `codigo` vincula al chico con el adulto para que pueda ver su progreso. */
+    function crear(usuario, clave, nombre, codigo) {
+      var c = cliente();
+      if (!c) return Promise.resolve({ error: "sin-conexion" });
+      if (!usuarioValido(usuario)) return Promise.resolve({ error: "usuario-invalido" });
+      if (String(clave || "").length < 6) return Promise.resolve({ error: "clave-corta" });
+
+      return c.auth.signUp({ email: correoDe(usuario), password: String(clave) })
+        .then(function (r) {
+          if (r.error) {
+            return { error: /already registered|already been registered/i.test(r.error.message)
+              ? "usuario-ocupado" : r.error.message };
+          }
+          if (!r.data.session) {
+            // pasa si quedó encendida la confirmación por correo
+            return { error: "falta-apagar-confirmacion" };
+          }
+          sesion = r.data.session;
+          return c.from("jugadores").insert({
+            user_id: sesion.user.id,
+            usuario: String(usuario).trim().toLowerCase(),
+            nombre: nombre || usuario,
+            codigo_familia: codigoNuevo()
+          }).then(function (ins) {
+            if (ins.error) return { error: ins.error.message };
+            if (!codigo) return traerFila().then(function () { return { ok: true }; });
+            return c.rpc("vincular_tutor", { codigo: codigo })
+              .then(function (v) {
+                return traerFila().then(function () {
+                  return { ok: true, vinculado: !!(v && v.data) };
+                });
+              });
+          });
+        })
+        .catch(function (e) { return { error: String(e && e.message || e) }; });
+    }
+
+    function codigoNuevo() {
+      var abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
+      for (var i = 0; i < 6; i++) s += abc[Math.floor(Math.random() * abc.length)];
       return s;
     }
 
-    function leerIndice() {
-      if (indice) return indice;
-      try {
-        indice = JSON.parse(localStorage.getItem(LLAVE_PERFILES) || "null");
-      } catch (e) { indice = null; }
-
-      if (!indice || !indice.lista || !indice.lista.length) {
-        indice = { activo: null, lista: [] };
-        // migrar la partida vieja de una sola persona, si existe
-        var viejo = null;
-        try { viejo = localStorage.getItem(MODO_PRUEBA ? "gaby.prueba" : "gaby.v1"); }
-        catch (e) {}
-        if (viejo) {
-          var d = null;
-          try { d = JSON.parse(viejo); } catch (e) {}
-          if (d && d.jugador) {
-            indice.lista.push({
-              id: "gabriel",
-              nombre: d.jugador.nombre || "Gabriel",
-              avatar: d.jugador.avatar || null,
-              nube: MODO_PRUEBA ? null : "gabriel"
-            });
-            indice.activo = "gabriel";
-            try { localStorage.setItem(llaveDatos("gabriel"), viejo); } catch (e) {}
-          }
-        }
-        guardarIndice();
-      }
-      return indice;
+    function salir() {
+      var c = cliente();
+      sesion = null; fila = null;
+      return c ? c.auth.signOut().catch(function () {}) : Promise.resolve();
     }
 
-    function guardarIndice() {
-      try { localStorage.setItem(LLAVE_PERFILES, JSON.stringify(indice)); }
-      catch (e) {}
+    /* Los chicos que este adulto tutorea, con su progreso. */
+    function misChicos() {
+      var c = cliente();
+      if (!c || !sesion) return Promise.resolve([]);
+      return c.from("jugadores").select("user_id,usuario,nombre,datos,actualizado")
+        .eq("tutor_id", sesion.user.id)
+        .then(function (r) { return (r && r.data) || []; })
+        .catch(function () { return []; });
     }
 
-    function perfilActivo() {
-      var ix = leerIndice();
-      if (!ix.activo) return null;
-      return ix.lista.filter(function (p) { return p.id === ix.activo; })[0] || null;
+    return {
+      cliente: cliente,
+      restaurar: restaurar,
+      entrar: entrar,
+      crear: crear,
+      salir: salir,
+      misChicos: misChicos,
+      traerFila: traerFila,
+      haySesion: function () { return !!sesion; },
+      idUsuario: function () { return sesion ? sesion.user.id : null; },
+      fila: function () { return fila; },
+      miCodigo: function () { return fila ? fila.codigo_familia : null; },
+      miUsuario: function () { return fila ? fila.usuario : null; },
+      miNombre: function () { return fila ? (fila.nombre || fila.usuario) : null; },
+      usuarioValido: usuarioValido,
+      hayNube: function () { return !!cliente(); }
+    };
+  })();
+
+  /* ==========================================================================
+     ALMACÉN — el progreso del jugador que está adentro
+     Guarda en el navegador (para poder jugar sin internet) y sincroniza con
+     la fila del jugador en Supabase.
+     ======================================================================== */
+
+  var Almacen = (function () {
+    /* MODO PRUEBA — jugar sin cuenta y sin tocar los datos de nadie.
+       Se activa agregando ?prueba a la dirección. */
+    var MODO_PRUEBA = /[?&]prueba\b/i.test(location.search) ||
+                      /\bprueba\b/i.test(location.hash);
+
+    var enMemoria = null;
+    var pendiente = null;
+
+    function llave() {
+      if (MODO_PRUEBA) return "gaby.prueba";
+      var u = Auth.idUsuario();
+      return u ? ("gaby.u." + u) : "gaby.anon";
     }
 
     function vacio() {
       return {
-        version: 1,
+        version: 2,
         jugador: { nombre: "", avatar: null, creado: null },
         esmeraldas: 0,
         esmeraldasGanadasTotal: 0,
         racha: { dias: 0, ultimoDia: null },
         diagnostico: { hecho: false, fecha: null, resultados: {} },
-        // destreza -> { intentos, aciertos, ultimoNivel, ms, historial:[] }
         destrezas: {},
-        // palabra -> { verde, amarillo, rojo, ultima, msPromedio }
         palabras: {},
         sesiones: [],
         premios: D.PREMIOS_INICIALES.slice(),
@@ -115,15 +201,10 @@
 
     function leer() {
       if (enMemoria) return enMemoria;
-      var p = perfilActivo();
-      if (!p) { enMemoria = vacio(); return enMemoria; }
       try {
-        var crudo = localStorage.getItem(llaveDatos(p.id));
+        var crudo = localStorage.getItem(llave());
         enMemoria = crudo ? JSON.parse(crudo) : vacio();
-      } catch (e) {
-        enMemoria = vacio();
-      }
-      // migración suave: campos nuevos que falten
+      } catch (e) { enMemoria = vacio(); }
       var base = vacio();
       Object.keys(base).forEach(function (k) {
         if (enMemoria[k] === undefined) enMemoria[k] = base[k];
@@ -132,137 +213,61 @@
     }
 
     function guardar() {
-      var p = perfilActivo();
-      if (!p) return;
-      try {
-        localStorage.setItem(llaveDatos(p.id), JSON.stringify(enMemoria));
-      } catch (e) { /* modo privado: se sigue jugando en memoria */ }
-      // el nombre y el avatar viven también en el índice, para pintar la
-      // pantalla de perfiles sin abrir el progreso de cada uno
-      if (enMemoria.jugador) {
-        var cambio = false;
-        if (enMemoria.jugador.nombre && p.nombre !== enMemoria.jugador.nombre) {
-          p.nombre = enMemoria.jugador.nombre; cambio = true;
-        }
-        if (enMemoria.jugador.avatar) { p.avatar = enMemoria.jugador.avatar; cambio = true; }
-        if (cambio) guardarIndice();
-      }
+      try { localStorage.setItem(llave(), JSON.stringify(enMemoria)); }
+      catch (e) { /* modo privado: se sigue jugando en memoria */ }
       sincronizar();
     }
 
-    /* --- Supabase (se activa cuando CONFIG tenga url + anonKey) ----------- */
-    function iniciarSupabase() {
-      if (MODO_PRUEBA) return;   // en prueba no se crea el cliente: nada toca la nube
-      if (!CFG.supabaseUrl || !CFG.supabaseAnonKey || !global.supabase) return;
-      try {
-        supa = global.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
-      } catch (e) { supa = null; }
-    }
-
-    /* Solo se sincroniza el perfil que tiene `nube`. Un perfil sin ese campo
-       vive únicamente en este aparato y nunca sale de acá. */
     function sincronizar() {
-      var p = perfilActivo();
-      if (!supa || !p || !p.nube) return;
+      if (MODO_PRUEBA || !Auth.haySesion()) return;
+      var c = Auth.cliente();
+      if (!c) return;
       clearTimeout(pendiente);
       pendiente = setTimeout(function () {
-        supa.from("progreso").upsert({
-          id: p.nube,
+        c.from("jugadores").update({
           datos: enMemoria,
+          nombre: (enMemoria.jugador && enMemoria.jugador.nombre) || "",
           actualizado: new Date().toISOString()
-        }).then(function () {}, function () {});
+        }).eq("user_id", Auth.idUsuario())
+          .then(function () {}, function () {});
       }, 1500);
     }
 
-    function traerRemoto() {
-      var p = perfilActivo();
-      if (!supa || !p || !p.nube) return Promise.resolve(null);
-      return supa.from("progreso").select("datos,actualizado")
-        .eq("id", p.nube).maybeSingle()
-        .then(function (r) { return r && r.data ? r.data.datos : null; })
-        .catch(function () { return null; });
+    /* Al entrar: si la nube trae más avance que lo guardado en este aparato,
+       se toma la nube. Así puede seguir en otra tablet donde quedó.
+       Se compara por esmeraldas ganadas en total, que solo sube. */
+    function adoptarRemoto() {
+      if (MODO_PRUEBA) return false;
+      var f = Auth.fila();
+      if (!f || !f.datos || !f.datos.jugador) return false;
+      var local = null;
+      try { local = JSON.parse(localStorage.getItem(llave()) || "null"); } catch (e) {}
+      var pesoRemoto = f.datos.esmeraldasGanadasTotal || 0;
+      var pesoLocal = (local && local.esmeraldasGanadasTotal) || 0;
+      if (!local || pesoRemoto >= pesoLocal) {
+        enMemoria = f.datos;
+        try { localStorage.setItem(llave(), JSON.stringify(enMemoria)); } catch (e) {}
+        return true;
+      }
+      return false;
     }
 
     return {
       leer: leer,
       guardar: guardar,
+      adoptarRemoto: adoptarRemoto,
       reiniciar: function () { enMemoria = vacio(); guardar(); },
+      olvidar: function () { enMemoria = null; },
       exportar: function () { return JSON.stringify(leer(), null, 2); },
       importar: function (txt) {
         try { enMemoria = JSON.parse(txt); guardar(); return true; }
         catch (e) { return false; }
       },
-      iniciarSupabase: iniciarSupabase,
-      traerRemoto: traerRemoto,
-      hayNube: function () {
-        var p = perfilActivo();
-        return !!supa && !!p && !!p.nube;
-      },
+      hayNube: function () { return !MODO_PRUEBA && Auth.haySesion(); },
       esPrueba: function () { return MODO_PRUEBA; },
       borrarPrueba: function () {
-        try {
-          var ix = JSON.parse(localStorage.getItem("gaby.prueba.perfiles") || "null");
-          (ix && ix.lista || []).forEach(function (p) {
-            localStorage.removeItem("gaby.prueba.p." + p.id);
-          });
-          localStorage.removeItem("gaby.prueba.perfiles");
-          localStorage.removeItem("gaby.prueba");
-        } catch (e) {}
-        indice = null; enMemoria = null;
-      },
-
-      /* ---- perfiles ---- */
-      perfiles: function () { return leerIndice().lista.slice(); },
-      perfilActivo: perfilActivo,
-      hayPerfiles: function () { return leerIndice().lista.length > 0; },
-
-      crearPerfil: function (nombre, avatar, sincroniza) {
-        var ix = leerIndice();
-        var id = idNuevo();
-        ix.lista.push({
-          id: id,
-          nombre: nombre || "Player",
-          avatar: avatar || null,
-          // el id de la nube es distinto del id local y es impredecible:
-          // en un sitio público es lo único que separa un perfil de otro
-          nube: (sincroniza && !MODO_PRUEBA) ? ("j_" + id) : null
-        });
-        ix.activo = id;
-        guardarIndice();
+        try { localStorage.removeItem("gaby.prueba"); } catch (e) {}
         enMemoria = null;
-        var d = leer();
-        d.jugador = { nombre: nombre || "Player", avatar: avatar || null, creado: Date.now() };
-        guardar();
-        return id;
-      },
-
-      cambiarPerfil: function (id) {
-        var ix = leerIndice();
-        if (!ix.lista.some(function (p) { return p.id === id; })) return false;
-        clearTimeout(pendiente);   // no arrastrar una escritura del perfil anterior
-        ix.activo = id;
-        guardarIndice();
-        enMemoria = null;
-        return true;
-      },
-
-      borrarPerfil: function (id) {
-        var ix = leerIndice();
-        ix.lista = ix.lista.filter(function (p) { return p.id !== id; });
-        if (ix.activo === id) ix.activo = ix.lista.length ? ix.lista[0].id : null;
-        guardarIndice();
-        try { localStorage.removeItem(llaveDatos(id)); } catch (e) {}
-        enMemoria = null;
-      },
-
-      /* prender o apagar la sincronización de un perfil */
-      ponerNube: function (id, sincroniza) {
-        var ix = leerIndice();
-        var p = ix.lista.filter(function (x) { return x.id === id; })[0];
-        if (!p || MODO_PRUEBA) return null;
-        p.nube = sincroniza ? (p.nube || ("j_" + p.id)) : null;
-        guardarIndice();
-        return p.nube;
       }
     };
   })();
@@ -769,6 +774,7 @@
      ======================================================================== */
 
   global.NUCLEO = {
+    Auth: Auth,
     Almacen: Almacen,
     Economia: Economia,
     Progreso: Progreso,
