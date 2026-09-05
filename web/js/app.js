@@ -26,7 +26,10 @@
       (e.racha.dias > 1 ? '<span class="hud-racha">🔥 ' + e.racha.dias + '</span>' : '') +
       '<button class="hud-papa" id="hudPapa" aria-label="Panel de papá">👤</button>';
     var a = document.getElementById("hudAvatar");
-    if (a) a.addEventListener("click", function () { irA("casa"); });
+    // con varios jugadores, tocar el avatar es cambiar de jugador
+    if (a) a.addEventListener("click", function () {
+      irA(Alm.perfiles().length > 1 ? "perfiles" : "casa");
+    });
     var p = document.getElementById("hudPapa");
     if (p) p.addEventListener("click", pedirPin);
   }
@@ -78,13 +81,52 @@
       '</section>';
     var acc = el.querySelector(".portada-acc");
     acc.appendChild(J.ui.boton("▶ START", "btn-primario btn-grande", function () {
-      irA("avatar");
+      irA("avatar", { nuevo: true });
     }));
   };
 
-  pantallas.avatar = function (el) {
-    var e = Alm.leer();
-    var a = e.jugador.avatar || N.Avatar.porDefecto();
+  /* --- elegir quién juega ------------------------------------------------- */
+
+  pantallas.perfiles = function (el) {
+    var lista = Alm.perfiles();
+    el.innerHTML =
+      '<section class="pantalla centro">' +
+        '<h2 class="tit">Who\'s playing?</h2>' +
+        '<p class="sub">¿Quién juega?</p>' +
+        '<div class="perfiles" id="ps"></div>' +
+        '<div class="acc" id="acc"></div>' +
+      '</section>';
+
+    var cont = el.querySelector("#ps");
+    lista.forEach(function (p) {
+      var b = document.createElement("button");
+      b.className = "perfil";
+      b.innerHTML =
+        '<span class="perfil-av">' + N.Avatar.svg(p.avatar, 74) + '</span>' +
+        '<span class="perfil-nom">' + U.esc(p.nombre) + '</span>' +
+        (p.nube ? '<span class="perfil-nube">☁ sincroniza</span>'
+                : '<span class="perfil-local">solo este aparato</span>');
+      b.addEventListener("click", function () {
+        Alm.cambiarPerfil(p.id);
+        var e = Alm.leer();
+        irA(!e.jugador.avatar ? "avatar" : !e.diagnostico.hecho ? "introDiag" : "casa");
+      });
+      cont.appendChild(b);
+    });
+
+    if (lista.length < 6) {
+      var mas = document.createElement("button");
+      mas.className = "perfil perfil-mas";
+      mas.innerHTML = '<span class="perfil-plus">+</span><span class="perfil-nom">New player</span>';
+      mas.addEventListener("click", function () { irA("avatar", { nuevo: true }); });
+      cont.appendChild(mas);
+    }
+  };
+
+  pantallas.avatar = function (el, datos) {
+    var esNuevo = !!(datos && datos.nuevo);
+    var e = esNuevo ? null : Alm.leer();
+    var a = (e && e.jugador.avatar) || N.Avatar.porDefecto();
 
     el.innerHTML =
       '<section class="pantalla">' +
@@ -95,8 +137,12 @@
         '<div class="campo">' +
           '<label for="nom">Your name</label>' +
           '<input id="nom" class="entrada" maxlength="14" placeholder="Gabriel" value="' +
-            U.esc(e.jugador.nombre || "") + '">' +
+            U.esc((e && e.jugador.nombre) || "") + '">' +
         '</div>' +
+        (esNuevo && !Alm.esPrueba() ?
+          '<label class="ajuste"><input type="checkbox" id="sync">' +
+          ' Guardar el progreso en la nube (para verlo desde otro aparato). ' +
+          'Dejalo apagado si el jugador no es de tu familia.</label>' : "") +
         '<div class="acc" id="acc"></div>' +
       '</section>';
 
@@ -155,13 +201,25 @@
 
     el.querySelector("#acc").appendChild(
       J.ui.boton("Ready →", "btn-primario btn-grande", function () {
-        var e2 = Alm.leer();
-        e2.jugador.avatar = a;
-        e2.jugador.nombre = (el.querySelector("#nom").value || "Gabriel").trim();
-        if (!e2.jugador.creado) e2.jugador.creado = Date.now();
-        Alm.guardar();
-        irA(e2.diagnostico.hecho ? "casa" : "introDiag");
+        var nombre = (el.querySelector("#nom").value || "Player").trim();
+        if (esNuevo) {
+          var sync = el.querySelector("#sync");
+          Alm.crearPerfil(nombre, a, sync && sync.checked);
+        } else {
+          var e2 = Alm.leer();
+          e2.jugador.avatar = a;
+          e2.jugador.nombre = nombre;
+          if (!e2.jugador.creado) e2.jugador.creado = Date.now();
+          Alm.guardar();
+        }
+        var d = Alm.leer();
+        irA(d.diagnostico.hecho ? "casa" : "introDiag");
       }));
+
+    if (!esNuevo && Alm.perfiles().length > 1) {
+      el.querySelector("#acc").appendChild(
+        J.ui.boton("← Cambiar de jugador", "btn-fantasma", function () { irA("perfiles"); }));
+    }
   };
 
   function logoSvg() {
@@ -619,8 +677,11 @@
           '<button data-t="destrezas" class="tab">Destrezas</button>' +
           '<button data-t="palabras" class="tab">Palabras</button>' +
           '<button data-t="premios" class="tab">Premios</button>' +
+          '<button data-t="jugadores" class="tab">Jugadores</button>' +
           '<button data-t="ajustes" class="tab">Ajustes</button>' +
         '</nav>' +
+        '<p class="panel-quien">Viendo los datos de <b>' +
+          U.esc((Alm.perfilActivo() || {}).nombre || "—") + '</b></p>' +
         '<div id="panelCuerpo"></div>' +
       '</section>';
     el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
@@ -641,7 +702,76 @@
       if (cual === "destrezas") return destrezas(e);
       if (cual === "palabras") return palabras(e);
       if (cual === "premios") return premios(e);
+      if (cual === "jugadores") return jugadores();
       return ajustes(e);
+    }
+
+    /* --- administrar quién juega ------------------------------------------ */
+    function jugadores() {
+      var lista = Alm.perfiles();
+      var activo = Alm.perfilActivo() || {};
+      cuerpo.innerHTML =
+        '<p class="nota">Cada jugador tiene su propio progreso, su avatar y sus ' +
+        'esmeraldas. El panel muestra siempre los datos del que está activo.</p>' +
+        '<div class="jug-lista" id="jl"></div>' +
+        '<div class="acc" id="accJug"></div>';
+
+      var jl = cuerpo.querySelector("#jl");
+      lista.forEach(function (p) {
+        var d = document.createElement("div");
+        d.className = "jug" + (p.id === activo.id ? " jug-activo" : "");
+        d.innerHTML =
+          '<span class="jug-av">' + N.Avatar.svg(p.avatar, 42) + '</span>' +
+          '<span class="jug-info"><b>' + U.esc(p.nombre) + '</b>' +
+          '<em>' + (p.nube ? "sincroniza con la nube" : "solo en este aparato") + '</em></span>';
+
+        var acc = document.createElement("span");
+        acc.className = "jug-acc";
+
+        if (p.id !== activo.id) {
+          var bSel = document.createElement("button");
+          bSel.className = "btn btn-suave";
+          bSel.textContent = "Usar";
+          bSel.addEventListener("click", function () {
+            Alm.cambiarPerfil(p.id); irA("panel");
+          });
+          acc.appendChild(bSel);
+        }
+
+        if (!Alm.esPrueba()) {
+          var bN = document.createElement("button");
+          bN.className = "btn btn-fantasma";
+          bN.textContent = p.nube ? "Dejar de sincronizar" : "Sincronizar";
+          bN.addEventListener("click", function () {
+            if (!p.nube && !confirm(
+              "Al sincronizar, el progreso de " + p.nombre + " se guarda en tu " +
+              "base de Supabase.\n\nSi el jugador no es de tu familia, lo correcto " +
+              "es pedirle permiso al padre o madre antes.\n\n¿Continuar?")) return;
+            Alm.ponerNube(p.id, !p.nube);
+            pintarTab("jugadores");
+          });
+          acc.appendChild(bN);
+        }
+
+        if (lista.length > 1) {
+          var bB = document.createElement("button");
+          bB.className = "btn btn-fantasma";
+          bB.textContent = "Borrar";
+          bB.addEventListener("click", function () {
+            if (!confirm("¿Borrar a " + p.nombre + " y todo su progreso de este aparato?")) return;
+            Alm.borrarPerfil(p.id);
+            irA("panel");
+          });
+          acc.appendChild(bB);
+        }
+        d.appendChild(acc);
+        jl.appendChild(d);
+      });
+
+      cuerpo.querySelector("#accJug").appendChild(
+        J.ui.boton("+ Nuevo jugador", "btn-suave", function () {
+          irA("avatar", { nuevo: true });
+        }));
     }
 
     function resumen(e) {
@@ -865,8 +995,12 @@
     hud = document.getElementById("hud");
     if (Alm.esPrueba()) bannerPrueba();
     Alm.iniciarSupabase();
+
+    if (!Alm.hayPerfiles()) return irA("bienvenida");
+    if (Alm.perfiles().length > 1) return irA("perfiles");
+
     var e = Alm.leer();
-    if (!e.jugador.avatar) irA("bienvenida");
+    if (!e.jugador.avatar) irA("avatar");
     else if (!e.diagnostico.hecho) irA("introDiag");
     else irA("casa");
   }

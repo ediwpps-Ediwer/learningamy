@@ -24,10 +24,74 @@
     var MODO_PRUEBA = /[?&]prueba\b/i.test(location.search) ||
                       /\bprueba\b/i.test(location.hash);
 
-    var LLAVE = MODO_PRUEBA ? "gaby.prueba" : "gaby.v1";
-    var enMemoria = null;
+    /* PERFILES — varios jugadores en el mismo aparato.
+       Cada uno tiene su progreso, su avatar y sus esmeraldas, guardados en
+       `gaby.p.<id>`. La lista vive en `gaby.perfiles`.
+       Solo se sincroniza a la nube el perfil que tenga `nube` puesto; los
+       demás viven únicamente en el aparato. */
+    var LLAVE_PERFILES = MODO_PRUEBA ? "gaby.prueba.perfiles" : "gaby.perfiles";
+    function llaveDatos(id) {
+      return (MODO_PRUEBA ? "gaby.prueba.p." : "gaby.p.") + id;
+    }
+
+    var indice = null;        // { activo, lista: [ {id,nombre,avatar,nube} ] }
+    var enMemoria = null;     // datos del perfil activo
     var supa = null;          // cliente Supabase cuando haya claves
     var pendiente = null;     // debounce de escritura remota
+
+    function idNuevo() {
+      // id imposible de adivinar: si algún día este perfil se sincroniza,
+      // el id es lo único que lo protege en un sitio público
+      var abc = "abcdefghijkmnpqrstuvwxyz23456789", s = "";
+      var r = new Uint8Array(12);
+      (global.crypto || {}).getRandomValues
+        ? global.crypto.getRandomValues(r)
+        : r.forEach(function (_, i) { r[i] = Math.floor(Math.random() * 256); });
+      for (var i = 0; i < 12; i++) s += abc[r[i] % abc.length];
+      return s;
+    }
+
+    function leerIndice() {
+      if (indice) return indice;
+      try {
+        indice = JSON.parse(localStorage.getItem(LLAVE_PERFILES) || "null");
+      } catch (e) { indice = null; }
+
+      if (!indice || !indice.lista || !indice.lista.length) {
+        indice = { activo: null, lista: [] };
+        // migrar la partida vieja de una sola persona, si existe
+        var viejo = null;
+        try { viejo = localStorage.getItem(MODO_PRUEBA ? "gaby.prueba" : "gaby.v1"); }
+        catch (e) {}
+        if (viejo) {
+          var d = null;
+          try { d = JSON.parse(viejo); } catch (e) {}
+          if (d && d.jugador) {
+            indice.lista.push({
+              id: "gabriel",
+              nombre: d.jugador.nombre || "Gabriel",
+              avatar: d.jugador.avatar || null,
+              nube: MODO_PRUEBA ? null : "gabriel"
+            });
+            indice.activo = "gabriel";
+            try { localStorage.setItem(llaveDatos("gabriel"), viejo); } catch (e) {}
+          }
+        }
+        guardarIndice();
+      }
+      return indice;
+    }
+
+    function guardarIndice() {
+      try { localStorage.setItem(LLAVE_PERFILES, JSON.stringify(indice)); }
+      catch (e) {}
+    }
+
+    function perfilActivo() {
+      var ix = leerIndice();
+      if (!ix.activo) return null;
+      return ix.lista.filter(function (p) { return p.id === ix.activo; })[0] || null;
+    }
 
     function vacio() {
       return {
@@ -51,8 +115,10 @@
 
     function leer() {
       if (enMemoria) return enMemoria;
+      var p = perfilActivo();
+      if (!p) { enMemoria = vacio(); return enMemoria; }
       try {
-        var crudo = localStorage.getItem(LLAVE);
+        var crudo = localStorage.getItem(llaveDatos(p.id));
         enMemoria = crudo ? JSON.parse(crudo) : vacio();
       } catch (e) {
         enMemoria = vacio();
@@ -66,9 +132,21 @@
     }
 
     function guardar() {
+      var p = perfilActivo();
+      if (!p) return;
       try {
-        localStorage.setItem(LLAVE, JSON.stringify(enMemoria));
+        localStorage.setItem(llaveDatos(p.id), JSON.stringify(enMemoria));
       } catch (e) { /* modo privado: se sigue jugando en memoria */ }
+      // el nombre y el avatar viven también en el índice, para pintar la
+      // pantalla de perfiles sin abrir el progreso de cada uno
+      if (enMemoria.jugador) {
+        var cambio = false;
+        if (enMemoria.jugador.nombre && p.nombre !== enMemoria.jugador.nombre) {
+          p.nombre = enMemoria.jugador.nombre; cambio = true;
+        }
+        if (enMemoria.jugador.avatar) { p.avatar = enMemoria.jugador.avatar; cambio = true; }
+        if (cambio) guardarIndice();
+      }
       sincronizar();
     }
 
@@ -81,12 +159,15 @@
       } catch (e) { supa = null; }
     }
 
+    /* Solo se sincroniza el perfil que tiene `nube`. Un perfil sin ese campo
+       vive únicamente en este aparato y nunca sale de acá. */
     function sincronizar() {
-      if (!supa) return;
+      var p = perfilActivo();
+      if (!supa || !p || !p.nube) return;
       clearTimeout(pendiente);
       pendiente = setTimeout(function () {
         supa.from("progreso").upsert({
-          id: CFG.jugadorId || "gabriel",
+          id: p.nube,
           datos: enMemoria,
           actualizado: new Date().toISOString()
         }).then(function () {}, function () {});
@@ -94,9 +175,10 @@
     }
 
     function traerRemoto() {
-      if (!supa) return Promise.resolve(null);
+      var p = perfilActivo();
+      if (!supa || !p || !p.nube) return Promise.resolve(null);
       return supa.from("progreso").select("datos,actualizado")
-        .eq("id", CFG.jugadorId || "gabriel").maybeSingle()
+        .eq("id", p.nube).maybeSingle()
         .then(function (r) { return r && r.data ? r.data.datos : null; })
         .catch(function () { return null; });
     }
@@ -112,11 +194,75 @@
       },
       iniciarSupabase: iniciarSupabase,
       traerRemoto: traerRemoto,
-      hayNube: function () { return !!supa; },
+      hayNube: function () {
+        var p = perfilActivo();
+        return !!supa && !!p && !!p.nube;
+      },
       esPrueba: function () { return MODO_PRUEBA; },
       borrarPrueba: function () {
-        try { localStorage.removeItem("gaby.prueba"); } catch (e) {}
+        try {
+          var ix = JSON.parse(localStorage.getItem("gaby.prueba.perfiles") || "null");
+          (ix && ix.lista || []).forEach(function (p) {
+            localStorage.removeItem("gaby.prueba.p." + p.id);
+          });
+          localStorage.removeItem("gaby.prueba.perfiles");
+          localStorage.removeItem("gaby.prueba");
+        } catch (e) {}
+        indice = null; enMemoria = null;
+      },
+
+      /* ---- perfiles ---- */
+      perfiles: function () { return leerIndice().lista.slice(); },
+      perfilActivo: perfilActivo,
+      hayPerfiles: function () { return leerIndice().lista.length > 0; },
+
+      crearPerfil: function (nombre, avatar, sincroniza) {
+        var ix = leerIndice();
+        var id = idNuevo();
+        ix.lista.push({
+          id: id,
+          nombre: nombre || "Player",
+          avatar: avatar || null,
+          // el id de la nube es distinto del id local y es impredecible:
+          // en un sitio público es lo único que separa un perfil de otro
+          nube: (sincroniza && !MODO_PRUEBA) ? ("j_" + id) : null
+        });
+        ix.activo = id;
+        guardarIndice();
         enMemoria = null;
+        var d = leer();
+        d.jugador = { nombre: nombre || "Player", avatar: avatar || null, creado: Date.now() };
+        guardar();
+        return id;
+      },
+
+      cambiarPerfil: function (id) {
+        var ix = leerIndice();
+        if (!ix.lista.some(function (p) { return p.id === id; })) return false;
+        clearTimeout(pendiente);   // no arrastrar una escritura del perfil anterior
+        ix.activo = id;
+        guardarIndice();
+        enMemoria = null;
+        return true;
+      },
+
+      borrarPerfil: function (id) {
+        var ix = leerIndice();
+        ix.lista = ix.lista.filter(function (p) { return p.id !== id; });
+        if (ix.activo === id) ix.activo = ix.lista.length ? ix.lista[0].id : null;
+        guardarIndice();
+        try { localStorage.removeItem(llaveDatos(id)); } catch (e) {}
+        enMemoria = null;
+      },
+
+      /* prender o apagar la sincronización de un perfil */
+      ponerNube: function (id, sincroniza) {
+        var ix = leerIndice();
+        var p = ix.lista.filter(function (x) { return x.id === id; })[0];
+        if (!p || MODO_PRUEBA) return null;
+        p.nube = sincroniza ? (p.nube || ("j_" + p.id)) : null;
+        guardarIndice();
+        return p.nube;
       }
     };
   })();

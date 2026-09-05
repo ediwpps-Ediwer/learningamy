@@ -24,24 +24,40 @@ alter table public.progreso enable row level security;
 --  `using (auth.uid() = user_id)`.
 -- --------------------------------------------------------------------------
 
+-- Qué filas puede tocar la clave pública:
+--   'gabriel'  -> la fila original
+--   'j_xxxxx'  -> un perfil creado desde el juego, con id aleatorio de 12
+--                 caracteres sobre un alfabeto de 32 (~60 bits)
+--
+-- ATENCIÓN, esto es importante y hay que entenderlo:
+-- el sitio es público, así que quien CONOZCA el id de un perfil puede leer y
+-- escribir ese perfil. Lo que lo protege es que el id sea imposible de adivinar,
+-- no una contraseña. Para una app familiar de tarea escolar el trato es
+-- razonable. Para datos de un chico de OTRA familia, lo correcto es pedirle
+-- permiso al padre o madre antes de prender la sincronización — o dejar ese
+-- perfil solo en el aparato, que es como viene por defecto.
+--
+-- El día que haga falta seguridad de verdad: Supabase Auth y cambiar el `using`
+-- por `auth.uid() = user_id`.
+
 drop policy if exists "progreso lectura" on public.progreso;
 create policy "progreso lectura"
   on public.progreso for select
   to anon
-  using (id = 'gabriel');
+  using (id = 'gabriel' or id like 'j\_%');
 
 drop policy if exists "progreso alta" on public.progreso;
 create policy "progreso alta"
   on public.progreso for insert
   to anon
-  with check (id = 'gabriel');
+  with check (id = 'gabriel' or (id like 'j\_%' and length(id) = 14));
 
 drop policy if exists "progreso cambio" on public.progreso;
 create policy "progreso cambio"
   on public.progreso for update
   to anon
-  using (id = 'gabriel')
-  with check (id = 'gabriel');
+  using (id = 'gabriel' or id like 'j\_%')
+  with check (id = 'gabriel' or id like 'j\_%');
 
 -- fila inicial
 insert into public.progreso (id, datos)
