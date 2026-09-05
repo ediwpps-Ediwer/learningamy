@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "blockquest",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["servir.py"],
+      "port": 8790
+    }
+  ]
+}

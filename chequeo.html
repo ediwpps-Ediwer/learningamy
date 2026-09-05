@@ -1,0 +1,676 @@
+<title>Chequeo Técnico de Gaby</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<style>
+  :root {
+    --ground:      #e9edf2;
+    --surface:     #ffffff;
+    --surface-2:   #f3f6fa;
+    --line:        #d3dae4;
+    --ink:         #151a23;
+    --muted:       #5f6b7c;
+    --accent:      #3550c8;
+    --accent-soft: #e3e8fb;
+    --ok:          #0d7a52;
+    --ok-soft:     #d9f0e6;
+    --warn:        #9a6400;
+    --warn-soft:   #fbeed3;
+    --bad:         #b83527;
+    --bad-soft:    #fbe0dc;
+    --shadow:      0 1px 2px rgba(21,26,35,.06), 0 6px 20px rgba(21,26,35,.06);
+    --radius:      14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #101319;
+      --surface:     #191d26;
+      --surface-2:   #212734;
+      --line:        #2f3746;
+      --ink:         #e8ecf3;
+      --muted:       #99a4b5;
+      --accent:      #8ea2ff;
+      --accent-soft: #232a45;
+      --ok:          #4fc99a;
+      --ok-soft:     #16332a;
+      --warn:        #e0b25c;
+      --warn-soft:   #33280f;
+      --bad:         #f08a7c;
+      --bad-soft:    #3a1f1c;
+      --shadow:      0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #101319;
+    --surface:     #191d26;
+    --surface-2:   #212734;
+    --line:        #2f3746;
+    --ink:         #e8ecf3;
+    --muted:       #99a4b5;
+    --accent:      #8ea2ff;
+    --accent-soft: #232a45;
+    --ok:          #4fc99a;
+    --ok-soft:     #16332a;
+    --warn:        #e0b25c;
+    --warn-soft:   #33280f;
+    --bad:         #f08a7c;
+    --bad-soft:    #3a1f1c;
+    --shadow:      0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 28px 18px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ---------- encabezado ---------- */
+  header { display: flex; flex-direction: column; gap: 8px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  h1 {
+    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 7vw, 38px);
+    line-height: 1.08;
+    margin: 0;
+    text-wrap: balance;
+    letter-spacing: -.02em;
+  }
+  header p { margin: 0; color: var(--muted); max-width: 46ch; }
+
+  /* ---------- tarjetas de prueba ---------- */
+  .tests { display: flex; flex-direction: column; gap: 12px; }
+
+  .test {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: var(--shadow);
+  }
+  .test-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .test-num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-radius: 7px;
+    padding: 3px 7px;
+    flex: none;
+    margin-top: 2px;
+  }
+  .test-title {
+    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0;
+    flex: 1 1 auto;
+    line-height: 1.25;
+  }
+  .chip {
+    flex: none;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--muted);
+    white-space: nowrap;
+    margin-top: 1px;
+  }
+  .chip[data-s="ok"]   { background: var(--ok-soft);   color: var(--ok); }
+  .chip[data-s="warn"] { background: var(--warn-soft); color: var(--warn); }
+  .chip[data-s="bad"]  { background: var(--bad-soft);  color: var(--bad); }
+  .chip[data-s="run"]  { background: var(--accent-soft); color: var(--accent); }
+
+  .test .detail {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+    background: var(--surface-2);
+    border-radius: 9px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+  .test .hint { font-size: 14px; color: var(--muted); margin: 0; }
+
+  /* ---------- botones ---------- */
+  button {
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    padding: 13px 18px;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    transition: transform .08s ease, filter .15s ease;
+    min-height: 48px;
+  }
+  :root[data-theme="dark"] button,
+  :root:not([data-theme="light"]) button { }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) button { color: #12151d; }
+  }
+  :root[data-theme="dark"] button { color: #12151d; }
+  button:hover { filter: brightness(1.07); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button[disabled] { opacity: .45; cursor: default; transform: none; filter: none; }
+  button.ghost {
+    background: var(--surface-2);
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) button.ghost { color: var(--ink); }
+  }
+  :root[data-theme="dark"] button.ghost { color: var(--ink); }
+
+  .say-word {
+    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 44px;
+    letter-spacing: -.01em;
+    text-align: center;
+    padding: 14px 0 6px;
+    color: var(--accent);
+  }
+
+  /* ---------- veredicto ---------- */
+  .verdict {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .verdict h2 {
+    font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    font-size: 20px;
+    margin: 0;
+  }
+  #resumen {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--surface-2);
+    border-radius: 10px;
+    padding: 12px;
+    margin: 0;
+    max-height: 340px;
+    overflow: auto;
+  }
+  .foot {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    margin: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Fase 0 · antes de programar el juego</div>
+    <h1>Chequeo Técnico</h1>
+    <p>Cinco pruebas rápidas en el aparato donde Gaby va a jugar. Esto decide cómo
+       construyo el juego de lectura en voz alta. Hacelas <strong>en la tablet</strong>,
+       con Chrome, y al final mandame el recuadro del resumen.</p>
+  </header>
+
+  <div class="tests">
+
+    <section class="test">
+      <div class="test-head">
+        <span class="test-num">01</span>
+        <h2 class="test-title">Aparato y navegador</h2>
+        <span class="chip" id="c1">midiendo</span>
+      </div>
+      <pre class="detail" id="d1">…</pre>
+    </section>
+
+    <section class="test">
+      <div class="test-head">
+        <span class="test-num">02</span>
+        <h2 class="test-title">Conexión segura</h2>
+        <span class="chip" id="c2">midiendo</span>
+      </div>
+      <p class="hint">Sin esto el navegador no presta el micrófono, pase lo que pase.</p>
+      <pre class="detail" id="d2">…</pre>
+    </section>
+
+    <section class="test">
+      <div class="test-head">
+        <span class="test-num">03</span>
+        <h2 class="test-title">Micrófono</h2>
+        <span class="chip" id="c3">sin probar</span>
+      </div>
+      <p class="hint">Va a aparecer un cartel pidiendo permiso. Tocá <strong>Permitir</strong>.</p>
+      <button id="b3">Probar el micrófono</button>
+      <pre class="detail" id="d3">Todavía no se probó.</pre>
+    </section>
+
+    <section class="test">
+      <div class="test-head">
+        <span class="test-num">04</span>
+        <h2 class="test-title">Entender lo que dice</h2>
+        <span class="chip" id="c4">sin probar</span>
+      </div>
+      <p class="hint">La prueba más importante de todas. Tocá el botón y decí la palabra
+         en voz alta y clara, en inglés:</p>
+      <div class="say-word">cat</div>
+      <button id="b4">Escuchar y reconocer</button>
+      <pre class="detail" id="d4">Todavía no se probó.</pre>
+    </section>
+
+    <section class="test">
+      <div class="test-head">
+        <span class="test-num">05</span>
+        <h2 class="test-title">Voz que pronuncia</h2>
+        <span class="chip" id="c5">sin probar</span>
+      </div>
+      <p class="hint">Es la voz que le va a enseñar la pronunciación correcta.
+         Subí el volumen antes de tocar.</p>
+      <button id="b5">Que diga “cat” en inglés</button>
+      <pre class="detail" id="d5">Todavía no se probó.</pre>
+    </section>
+
+  </div>
+
+  <div class="verdict">
+    <h2>Resumen para mandarme</h2>
+    <pre id="resumen">Corré las pruebas 03, 04 y 05 y este recuadro se va a llenar solo.</pre>
+    <button class="ghost" id="bcopy">Copiar el resumen</button>
+    <p class="foot">Si copiar no funciona en la tablet, sacale una foto a este recuadro y mandámela.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var R = {
+    aparato: {}, seguro: {}, microfono: {}, reconocer: {}, voz: {}
+  };
+
+  function chip(id, estado, texto) {
+    var el = document.getElementById(id);
+    el.textContent = texto;
+    if (estado) { el.setAttribute("data-s", estado); }
+    else { el.removeAttribute("data-s"); }
+  }
+  function detalle(id, txt) { document.getElementById(id).textContent = txt; }
+
+  // ---------- 01 aparato ----------
+  function pruebaAparato() {
+    var ua = navigator.userAgent;
+    var esAndroid = /Android/i.test(ua);
+    var esIOS = /iPad|iPhone|iPod/i.test(ua) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var esChrome = /Chrome\//.test(ua) && !/Edg\//.test(ua) && !/SamsungBrowser/.test(ua) && !/OPR\//.test(ua);
+    var esSamsung = /SamsungBrowser/.test(ua);
+    var esSafari = /Safari\//.test(ua) && !/Chrome\//.test(ua) && !/CriOS/.test(ua);
+    var esCriOS = /CriOS/.test(ua);
+
+    var sistema = esAndroid ? "Android" : esIOS ? "iOS" : /Windows/.test(ua) ? "Windows" :
+                  /Mac/.test(ua) ? "Mac" : "otro";
+    var navg = esCriOS ? "Chrome en iOS" : esChrome ? "Chrome" : esSamsung ? "Samsung Internet" :
+               esSafari ? "Safari" : /Edg\//.test(ua) ? "Edge" : /Firefox/.test(ua) ? "Firefox" : "otro";
+
+    R.aparato = {
+      sistema: sistema, navegador: navg,
+      pantalla: window.screen.width + "x" + window.screen.height,
+      ventana: window.innerWidth + "x" + window.innerHeight,
+      tactil: navigator.maxTouchPoints > 0,
+      ua: ua
+    };
+
+    var estado = "ok", nota = "Sirve.";
+    if (esSamsung) { estado = "warn"; nota = "Samsung Internet reconoce voz mucho peor que Chrome. Instalá Chrome."; }
+    if (esCriOS)   { estado = "warn"; nota = "Chrome en iOS usa el motor de Safari por dentro. Igual que Safari."; }
+
+    chip("c1", estado, sistema + " · " + navg);
+    detalle("d1",
+      "Sistema:   " + sistema + "\n" +
+      "Navegador: " + navg + "\n" +
+      "Pantalla:  " + R.aparato.pantalla + "   Ventana: " + R.aparato.ventana + "\n" +
+      "Táctil:    " + (R.aparato.tactil ? "sí" : "no") + "\n\n" + nota
+    );
+  }
+
+  // ---------- 02 contexto seguro ----------
+  function pruebaSegura() {
+    var seguro = window.isSecureContext === true;
+    var enMarco = false;
+    try { enMarco = window.self !== window.top; } catch (e) { enMarco = true; }
+
+    var permitidoPorMarco = null;
+    try {
+      if (document.featurePolicy && document.featurePolicy.allowsFeature) {
+        permitidoPorMarco = document.featurePolicy.allowsFeature("microphone");
+      }
+    } catch (e) { permitidoPorMarco = null; }
+
+    R.seguro = {
+      contextoSeguro: seguro,
+      protocolo: location.protocol,
+      dentroDeMarco: enMarco,
+      marcoPermiteMicrofono: permitidoPorMarco,
+      tieneApiMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+    };
+
+    var estado, resumen;
+    if (!seguro) { estado = "bad"; resumen = "NO seguro — el micrófono está bloqueado de entrada"; }
+    else if (permitidoPorMarco === false) { estado = "bad"; resumen = "El marco bloquea el micrófono"; }
+    else if (enMarco && permitidoPorMarco === null) { estado = "warn"; resumen = "Seguro, dentro de un marco"; }
+    else { estado = "ok"; resumen = "Todo en orden"; }
+
+    chip("c2", estado, resumen);
+    detalle("d2",
+      "Contexto seguro:        " + (seguro ? "sí" : "NO") + "  (" + location.protocol + ")\n" +
+      "Dentro de un marco:     " + (enMarco ? "sí" : "no") + "\n" +
+      "El marco da micrófono:  " + (permitidoPorMarco === null ? "no se puede saber acá" : (permitidoPorMarco ? "sí" : "NO")) + "\n" +
+      "API de micrófono:       " + (R.seguro.tieneApiMedia ? "disponible" : "NO EXISTE")
+    );
+  }
+
+  // ---------- 03 micrófono ----------
+  document.getElementById("b3").addEventListener("click", function () {
+    var btn = this;
+    btn.disabled = true;
+    chip("c3", "run", "pidiendo permiso");
+    detalle("d3", "Esperando que toques Permitir…");
+
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      R.microfono = { ok: false, error: "sin-api" };
+      chip("c3", "bad", "no existe");
+      detalle("d3", "Este navegador no tiene la API de micrófono.");
+      actualizarResumen(); btn.disabled = false; return;
+    }
+
+    var t0 = Date.now();
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var pistas = stream.getAudioTracks();
+      var etiqueta = pistas.length ? (pistas[0].label || "(sin nombre)") : "(ninguna)";
+      stream.getTracks().forEach(function (t) { t.stop(); });
+
+      R.microfono = { ok: true, ms: Date.now() - t0, dispositivo: etiqueta };
+      chip("c3", "ok", "funciona");
+      detalle("d3",
+        "Permiso concedido en " + (Date.now() - t0) + " ms\n" +
+        "Micrófono: " + etiqueta
+      );
+      actualizarResumen(); btn.disabled = false;
+    }).catch(function (err) {
+      R.microfono = { ok: false, error: err.name, mensaje: String(err.message || "") };
+
+      var explica;
+      if (err.name === "NotAllowedError") {
+        explica = /policy|disallowed|feature/i.test(String(err.message))
+          ? "BLOQUEADO POR EL MARCO. Esto significa que el juego no puede vivir como Artifact — vamos a la opción B."
+          : "Permiso negado. Puede ser que tocaste Bloquear, o que Chrome tenga el micrófono desactivado para este sitio.";
+      } else if (err.name === "NotFoundError") {
+        explica = "No encontró ningún micrófono en el aparato.";
+      } else if (err.name === "NotReadableError") {
+        explica = "Otra app está usando el micrófono. Cerrala y probá de nuevo.";
+      } else {
+        explica = "Error inesperado.";
+      }
+
+      chip("c3", "bad", "falló");
+      detalle("d3", "Error: " + err.name + "\n" + String(err.message || "") + "\n\n" + explica);
+      actualizarResumen(); btn.disabled = false;
+    });
+  });
+
+  // ---------- 04 reconocimiento ----------
+  document.getElementById("b4").addEventListener("click", function () {
+    var btn = this;
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SR) {
+      R.reconocer = { ok: false, error: "sin-api" };
+      chip("c4", "bad", "no existe");
+      detalle("d4", "Este navegador no tiene reconocimiento de voz.\nEn Android hay que usar Chrome.");
+      actualizarResumen(); return;
+    }
+
+    btn.disabled = true;
+    chip("c4", "run", "escuchando");
+    detalle("d4", "Decí «cat» ahora, fuerte y claro…");
+
+    var rec = new SR();
+    rec.lang = "en-US";
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 5;
+
+    var t0 = Date.now();
+    var listo = false;
+    var parciales = 0;
+    var corte = setTimeout(function () {
+      if (!listo) { try { rec.stop(); } catch (e) {} }
+    }, 9000);
+
+    rec.onresult = function (ev) {
+      var res = ev.results[ev.results.length - 1];
+      if (!res.isFinal) { parciales++; detalle("d4", "Oyendo… «" + res[0].transcript + "»"); return; }
+
+      listo = true; clearTimeout(corte);
+      var alts = [];
+      for (var i = 0; i < res.length; i++) {
+        alts.push({
+          texto: String(res[i].transcript || "").trim().toLowerCase(),
+          confianza: typeof res[i].confidence === "number" ? Number(res[i].confidence.toFixed(3)) : null
+        });
+      }
+      var acerto = alts.some(function (a) { return a.texto === "cat"; });
+
+      R.reconocer = {
+        ok: true, acerto: acerto, ms: Date.now() - t0,
+        alternativas: alts, huboParciales: parciales > 0
+      };
+
+      chip("c4", acerto ? "ok" : "warn", acerto ? "reconoció" : "oyó otra cosa");
+      var txt = "Oyó: " + alts.map(function (a) {
+        return "«" + a.texto + "»" + (a.confianza !== null ? " (" + a.confianza + ")" : "");
+      }).join("  ·  ");
+      txt += "\nTardó: " + (Date.now() - t0) + " ms";
+      txt += "\nResultados parciales en vivo: " + (parciales > 0 ? "sí (" + parciales + ")" : "no");
+      txt += "\n\n" + (acerto
+        ? "Perfecto. El semáforo de pronunciación va a funcionar acá."
+        : "No dio «cat». Puede ser ruido, volumen, o que este navegador reconozca mal. Probá otra vez más cerca del micrófono.");
+      detalle("d4", txt);
+      actualizarResumen(); btn.disabled = false;
+    };
+
+    rec.onerror = function (ev) {
+      listo = true; clearTimeout(corte);
+      R.reconocer = { ok: false, error: ev.error };
+      var m = {
+        "not-allowed": "Permiso de micrófono negado para reconocimiento de voz.",
+        "service-not-allowed": "El navegador no deja usar el servicio de reconocimiento. Típico dentro de un marco o en Safari.",
+        "no-speech": "No escuchó nada. Subí la voz o acercate al micrófono.",
+        "network": "Necesita internet para reconocer. Revisá la conexión.",
+        "audio-capture": "No pudo tomar el audio del micrófono.",
+        "aborted": "Se cortó antes de terminar."
+      }[ev.error] || "Error desconocido.";
+      chip("c4", ev.error === "no-speech" ? "warn" : "bad", ev.error);
+      detalle("d4", "Error: " + ev.error + "\n" + m);
+      actualizarResumen(); btn.disabled = false;
+    };
+
+    rec.onend = function () {
+      clearTimeout(corte);
+      btn.disabled = false;
+      if (!listo) {
+        R.reconocer = { ok: false, error: "sin-resultado" };
+        chip("c4", "warn", "sin resultado");
+        detalle("d4", "Terminó sin devolver nada. Probá de nuevo hablando apenas toques el botón.");
+        actualizarResumen();
+      }
+    };
+
+    try { rec.start(); }
+    catch (e) {
+      clearTimeout(corte);
+      R.reconocer = { ok: false, error: "no-arranco", mensaje: String(e && e.message) };
+      chip("c4", "bad", "no arrancó");
+      detalle("d4", "No pudo arrancar: " + String(e && e.message));
+      actualizarResumen(); btn.disabled = false;
+    }
+  });
+
+  // ---------- 05 voz ----------
+  function vocesInglesas() {
+    if (!window.speechSynthesis) return [];
+    return (speechSynthesis.getVoices() || []).filter(function (v) { return /^en/i.test(v.lang); });
+  }
+  document.getElementById("b5").addEventListener("click", function () {
+    if (!window.speechSynthesis) {
+      R.voz = { ok: false, error: "sin-api" };
+      chip("c5", "bad", "no existe");
+      detalle("d5", "Este navegador no puede hablar.");
+      actualizarResumen(); return;
+    }
+    var btn = this;
+    btn.disabled = true;
+    chip("c5", "run", "hablando");
+
+    function hablar() {
+      var en = vocesInglesas();
+      var u = new SpeechSynthesisUtterance("cat");
+      u.lang = "en-US";
+      u.rate = 0.85;
+      if (en.length) { u.voice = en[0]; }
+
+      R.voz = {
+        ok: true,
+        vocesEnIngles: en.length,
+        usada: en.length ? (en[0].name + " / " + en[0].lang) : "(la que trae por defecto)",
+        listaCorta: en.slice(0, 6).map(function (v) { return v.name + " (" + v.lang + ")"; })
+      };
+
+      u.onend = function () {
+        chip("c5", en.length ? "ok" : "warn", en.length ? "habló" : "sin voz inglesa");
+        detalle("d5",
+          "Voces en inglés instaladas: " + en.length + "\n" +
+          "Usó: " + R.voz.usada + "\n" +
+          (en.length ? R.voz.listaCorta.join("\n") : "No hay voz en inglés. Va a sonar con acento raro.") +
+          "\n\n¿Se escuchó «cat» claro y en inglés?"
+        );
+        actualizarResumen(); btn.disabled = false;
+      };
+      u.onerror = function () {
+        R.voz = { ok: false, error: "fallo-al-hablar" };
+        chip("c5", "bad", "falló");
+        detalle("d5", "No pudo hablar.");
+        actualizarResumen(); btn.disabled = false;
+      };
+      speechSynthesis.speak(u);
+    }
+
+    if (vocesInglesas().length === 0) {
+      speechSynthesis.onvoiceschanged = function () { speechSynthesis.onvoiceschanged = null; hablar(); };
+      setTimeout(hablar, 600);
+    } else { hablar(); }
+  });
+
+  // ---------- resumen ----------
+  function actualizarResumen() {
+    var l = [];
+    l.push("CHEQUEO — JUEGO DE GABY");
+    l.push("fecha: " + new Date().toISOString());
+    l.push("");
+    l.push("[01] " + R.aparato.sistema + " · " + R.aparato.navegador +
+           " · pantalla " + R.aparato.pantalla + " · ventana " + R.aparato.ventana);
+    l.push("[02] seguro=" + R.seguro.contextoSeguro +
+           " marco=" + R.seguro.dentroDeMarco +
+           " marcoDaMic=" + R.seguro.marcoPermiteMicrofono +
+           " apiMedia=" + R.seguro.tieneApiMedia);
+    l.push("[03] microfono: " + (R.microfono.ok === true
+              ? "OK (" + R.microfono.ms + "ms, " + R.microfono.dispositivo + ")"
+              : R.microfono.ok === false
+                ? "FALLO " + R.microfono.error + " — " + (R.microfono.mensaje || "")
+                : "sin probar"));
+    if (R.reconocer.ok === true) {
+      l.push("[04] reconocimiento: OK acerto=" + R.reconocer.acerto +
+             " " + R.reconocer.ms + "ms parciales=" + R.reconocer.huboParciales);
+      l.push("     oyo: " + R.reconocer.alternativas.map(function (a) {
+        return a.texto + "(" + a.confianza + ")"; }).join(" | "));
+    } else if (R.reconocer.ok === false) {
+      l.push("[04] reconocimiento: FALLO " + R.reconocer.error);
+    } else { l.push("[04] reconocimiento: sin probar"); }
+    l.push("[05] voz: " + (R.voz.ok === true
+              ? "OK " + R.voz.vocesEnIngles + " voces en · usa " + R.voz.usada
+              : R.voz.ok === false ? "FALLO " + R.voz.error : "sin probar"));
+    l.push("");
+    l.push("ua: " + R.aparato.ua);
+    document.getElementById("resumen").textContent = l.join("\n");
+  }
+
+  document.getElementById("bcopy").addEventListener("click", function () {
+    var btn = this, txt = document.getElementById("resumen").textContent;
+    function ok() { btn.textContent = "Copiado"; setTimeout(function () { btn.textContent = "Copiar el resumen"; }, 1800); }
+    function no() { btn.textContent = "No se pudo — sacale una foto"; setTimeout(function () { btn.textContent = "Copiar el resumen"; }, 2600); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(ok).catch(no);
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy") ? ok() : no(); } catch (e) { no(); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  pruebaAparato();
+  pruebaSegura();
+  actualizarResumen();
+})();
+</script>

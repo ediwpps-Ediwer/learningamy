@@ -1,0 +1,856 @@
+/* ============================================================================
+   APP — pantallas, avatar, diagnóstico, mundos y panel del papá
+   ========================================================================== */
+
+(function (global) {
+  "use strict";
+
+  var D = global.DATOS, N = global.NUCLEO, J = global.JUEGOS;
+  var U = N.Util, Voz = N.Voz, Eco = N.Economia, Pro = N.Progreso, Alm = N.Almacen;
+
+  var app, hud;
+
+  /* ==========================================================================
+     HUD — avatar, esmeraldas, racha
+     ======================================================================== */
+
+  function pintarHud() {
+    var e = Alm.leer();
+    hud.innerHTML =
+      '<button class="hud-avatar" id="hudAvatar" aria-label="Mi personaje">' +
+        N.Avatar.svg(e.jugador.avatar, 26) + '</button>' +
+      '<span class="hud-nombre">' + U.esc(e.jugador.nombre || "Player") + '</span>' +
+      '<span class="hud-sep"></span>' +
+      '<span class="hud-esm" id="hudEsm">' + esmeraldaSvg(16) +
+        '<b>' + e.esmeraldas + '</b></span>' +
+      (e.racha.dias > 1 ? '<span class="hud-racha">🔥 ' + e.racha.dias + '</span>' : '') +
+      '<button class="hud-papa" id="hudPapa" aria-label="Panel de papá">👤</button>';
+    var a = document.getElementById("hudAvatar");
+    if (a) a.addEventListener("click", function () { irA("casa"); });
+    var p = document.getElementById("hudPapa");
+    if (p) p.addEventListener("click", pedirPin);
+  }
+
+  function esmeraldaSvg(t) {
+    return '<svg viewBox="0 0 12 12" width="' + t + '" height="' + t +
+      '" shape-rendering="crispEdges" aria-hidden="true">' +
+      '<path d="M6 1 L10 5 L6 11 L2 5 Z" fill="#2ee6a0"/>' +
+      '<path d="M6 1 L8 5 L6 8 L4 5 Z" fill="#7df5c6"/></svg>';
+  }
+
+  N.Bus.en("esmeraldas", function (d) {
+    var el = document.getElementById("hudEsm");
+    if (!el) return;
+    el.querySelector("b").textContent = d.total;
+    if (d.ganadas > 0) {
+      el.classList.remove("brilla");
+      void el.offsetWidth;
+      el.classList.add("brilla");
+    }
+  });
+
+  /* ==========================================================================
+     RUTAS
+     ======================================================================== */
+
+  var pantallas = {};
+  var actual = null;
+
+  function irA(nombre, datos) {
+    actual = nombre;
+    app.innerHTML = "";
+    app.scrollTop = 0;
+    pintarHud();
+    (pantallas[nombre] || pantallas.casa)(app, datos || {});
+  }
+
+  /* ==========================================================================
+     BIENVENIDA + AVATAR
+     ======================================================================== */
+
+  pantallas.bienvenida = function (el) {
+    el.innerHTML =
+      '<section class="portada">' +
+        '<div class="portada-logo">' + logoSvg() + '</div>' +
+        '<h1 class="portada-tit">BLOCK QUEST</h1>' +
+        '<p class="portada-sub">Reading &amp; Math</p>' +
+        '<div class="portada-acc"></div>' +
+      '</section>';
+    var acc = el.querySelector(".portada-acc");
+    acc.appendChild(J.ui.boton("▶ START", "btn-primario btn-grande", function () {
+      irA("avatar");
+    }));
+  };
+
+  pantallas.avatar = function (el) {
+    var e = Alm.leer();
+    var a = e.jugador.avatar || N.Avatar.porDefecto();
+
+    el.innerHTML =
+      '<section class="pantalla">' +
+        '<h2 class="tit">Make your character</h2>' +
+        '<p class="sub">Armá tu personaje</p>' +
+        '<div class="avatar-vista" id="vista"></div>' +
+        '<div class="avatar-opts" id="opts"></div>' +
+        '<div class="campo">' +
+          '<label for="nom">Your name</label>' +
+          '<input id="nom" class="entrada" maxlength="14" placeholder="Gabriel" value="' +
+            U.esc(e.jugador.nombre || "") + '">' +
+        '</div>' +
+        '<div class="acc" id="acc"></div>' +
+      '</section>';
+
+    var vista = el.querySelector("#vista");
+    var opts = el.querySelector("#opts");
+
+    function repintar() { vista.innerHTML = N.Avatar.svg(a, 120); }
+    repintar();
+
+    [["piel", "Skin", N.Avatar.piel],
+     ["pelo", "Hair", N.Avatar.pelo],
+     ["ojos", "Eyes", N.Avatar.ojos],
+     ["ropa", "Shirt", N.Avatar.ropa]].forEach(function (par) {
+      var fila = document.createElement("div");
+      fila.className = "opt-fila";
+      fila.innerHTML = '<span class="opt-et">' + par[1] + '</span>';
+      var caja = document.createElement("div");
+      caja.className = "opt-colores";
+      par[2].forEach(function (c, i) {
+        var b = document.createElement("button");
+        b.className = "swatch" + (a[par[0]] === i ? " sel" : "");
+        b.style.background = c;
+        b.setAttribute("aria-label", par[1] + " " + (i + 1));
+        b.addEventListener("click", function () {
+          a[par[0]] = i;
+          caja.querySelectorAll(".swatch").forEach(function (x) { x.classList.remove("sel"); });
+          b.classList.add("sel");
+          repintar();
+        });
+        caja.appendChild(b);
+      });
+      fila.appendChild(caja);
+      opts.appendChild(fila);
+    });
+
+    // sombrero
+    var filaS = document.createElement("div");
+    filaS.className = "opt-fila";
+    filaS.innerHTML = '<span class="opt-et">Hat</span>';
+    var cajaS = document.createElement("div");
+    cajaS.className = "opt-colores";
+    N.Avatar.sombrero.forEach(function (s, i) {
+      var b = document.createElement("button");
+      b.className = "pastilla" + (a.sombrero === i ? " sel" : "");
+      b.textContent = s === "ninguno" ? "—" : s;
+      b.addEventListener("click", function () {
+        a.sombrero = i;
+        cajaS.querySelectorAll(".pastilla").forEach(function (x) { x.classList.remove("sel"); });
+        b.classList.add("sel");
+        repintar();
+      });
+      cajaS.appendChild(b);
+    });
+    filaS.appendChild(cajaS);
+    opts.appendChild(filaS);
+
+    el.querySelector("#acc").appendChild(
+      J.ui.boton("Ready →", "btn-primario btn-grande", function () {
+        var e2 = Alm.leer();
+        e2.jugador.avatar = a;
+        e2.jugador.nombre = (el.querySelector("#nom").value || "Gabriel").trim();
+        if (!e2.jugador.creado) e2.jugador.creado = Date.now();
+        Alm.guardar();
+        irA(e2.diagnostico.hecho ? "casa" : "introDiag");
+      }));
+  };
+
+  function logoSvg() {
+    return '<svg viewBox="0 0 48 32" width="150" height="100" shape-rendering="crispEdges" aria-hidden="true">' +
+      '<rect x="2" y="14" width="44" height="16" fill="#3f8a3f"/>' +
+      '<rect x="2" y="12" width="44" height="3" fill="#4fae4f"/>' +
+      '<path d="M12 4 L16 8 L12 14 L8 8 Z" fill="#2ee6a0"/>' +
+      '<path d="M24 2 L29 8 L24 15 L19 8 Z" fill="#2ee6a0"/>' +
+      '<path d="M36 4 L40 8 L36 14 L32 8 Z" fill="#2ee6a0"/>' +
+      '<path d="M24 2 L26.5 8 L24 11 L21.5 8 Z" fill="#7df5c6"/></svg>';
+  }
+
+  /* ==========================================================================
+     DIAGNÓSTICO — 7 pruebas cortas que dicen desde dónde arrancar
+     Diseñado sobre los datos reales: no empieza por lo que ya domina.
+     ======================================================================== */
+
+  var DIAG = [
+    { id: "sight-1", tit: "Palabras conocidas 1", juego: "lecturaPalabras",
+      cfg: function () { return { items: U.tomar(D.SIGHT[1].concat(D.SIGHT[2]), 8), modo: "practica" }; } },
+    { id: "sight-2", tit: "Palabras conocidas 2", juego: "lecturaPalabras",
+      cfg: function () { return { items: U.tomar(D.SIGHT[3].concat(D.SIGHT[4]), 8), modo: "practica" }; } },
+    { id: "cvc", tit: "Decodificar CVC", juego: "lecturaPalabras",
+      cfg: function () { return { items: U.tomar(D.NONSENSE.cvc, 8), modo: "practica" }; } },
+    { id: "cvce", tit: "Decodificar CVCe", juego: "lecturaPalabras",
+      cfg: function () { return { items: U.tomar(D.NONSENSE.cvce, 8), modo: "practica" }; } },
+    { id: "spelling", tit: "Escribir palabras", juego: "spelling",
+      cfg: function () { return { items: U.tomar(D.MODULO3.spellingSemana, 5) }; } },
+    { id: "operaciones", tit: "Sumas y restas", juego: "operaciones",
+      cfg: function () { return { items: U.tomar(D.ECUACIONES_CLASE, 6), estrategia: false }; } },
+    { id: "graficas", tit: "Leer gráficas", juego: "graficas",
+      cfg: function () { return { grafica: D.GRAFICAS[0], cuantas: 4 }; } },
+    { id: "formas", tit: "Formas", juego: "formas",
+      cfg: function () { return { rondas: 5 }; } }
+  ];
+
+  pantallas.introDiag = function (el) {
+    el.innerHTML =
+      '<section class="pantalla centro">' +
+        '<h2 class="tit">Let\'s see what you know</h2>' +
+        '<p class="sub">Vamos a ver qué sabés. No es un examen — no se puede perder.</p>' +
+        '<ul class="lista-diag">' +
+          DIAG.map(function (d, i) {
+            return '<li><span class="n">' + (i + 1) + '</span>' + U.esc(d.tit) + '</li>';
+          }).join("") +
+        '</ul>' +
+        '<p class="nota">Podés parar cuando quieras y seguir después.</p>' +
+        '<div class="acc" id="acc"></div>' +
+      '</section>';
+    el.querySelector("#acc").appendChild(
+      J.ui.boton("▶ Empezar", "btn-primario btn-grande", function () {
+        irA("diag", { paso: 0 });
+      }));
+    el.querySelector("#acc").appendChild(
+      J.ui.boton("Saltar por ahora", "btn-fantasma", function () { irA("casa"); }));
+  };
+
+  pantallas.diag = function (el, datos) {
+    var paso = datos.paso || 0;
+    if (paso >= DIAG.length) return cerrarDiag(el);
+    var d = DIAG[paso];
+
+    var barra = document.createElement("div");
+    barra.className = "diag-barra";
+    barra.innerHTML = '<div class="diag-relleno" style="width:' +
+      Math.round(paso / DIAG.length * 100) + '%"></div>' +
+      '<span class="diag-txt">' + (paso + 1) + " / " + DIAG.length + " · " + U.esc(d.tit) + '</span>';
+    el.appendChild(barra);
+
+    var zona = document.createElement("div");
+    el.appendChild(zona);
+
+    J[d.juego].iniciar(zona, d.cfg(), function (res) {
+      var e = Alm.leer();
+      e.diagnostico.resultados[d.id] = {
+        aciertos: res.aciertos, total: res.total,
+        pct: res.total ? Math.round(res.aciertos / res.total * 100) : 0,
+        cuando: Date.now()
+      };
+      Alm.guardar();
+      irA("diag", { paso: paso + 1 });
+    });
+  };
+
+  function cerrarDiag(el) {
+    var e = Alm.leer();
+    e.diagnostico.hecho = true;
+    e.diagnostico.fecha = Date.now();
+    Alm.guardar();
+    Eco.dar(Eco.PAGOS.diagnosticoCompleto, "diagnostico");
+
+    var r = e.diagnostico.resultados;
+    el.innerHTML =
+      '<section class="pantalla centro">' +
+        '<h2 class="tit">¡Listo!</h2>' +
+        '<p class="sub">Esto es lo que vimos</p>' +
+        '<div class="diag-tabla">' +
+          DIAG.map(function (d) {
+            var x = r[d.id];
+            var pct = x ? x.pct : null;
+            var col = pct === null ? "" : pct >= 80 ? "verde" : pct >= 50 ? "amarillo" : "rojo";
+            return '<div class="diag-fila">' +
+              '<span>' + U.esc(d.tit) + '</span>' +
+              '<span class="diag-pct sem-' + col + '">' +
+                (pct === null ? "—" : pct + "%") + '</span></div>';
+          }).join("") +
+        '</div>' +
+        '<p class="nota">Papá puede ver el detalle completo en su panel.</p>' +
+        '<div class="acc" id="acc"></div>' +
+      '</section>';
+    el.querySelector("#acc").appendChild(
+      J.ui.boton("Ir a jugar →", "btn-primario btn-grande", function () { irA("casa"); }));
+  }
+
+  /* ==========================================================================
+     CASA — elegir mundo
+     ======================================================================== */
+
+  pantallas.casa = function (el) {
+    var e = Alm.leer();
+    Eco.marcarDia();
+    el.innerHTML =
+      '<section class="pantalla">' +
+        '<div class="saludo">' +
+          '<div class="saludo-av">' + N.Avatar.svg(e.jugador.avatar, 72) + '</div>' +
+          '<div><h2 class="tit-chico">Hi, ' + U.esc(e.jugador.nombre || "Player") + '</h2>' +
+          '<p class="sub">Choose your world</p></div>' +
+        '</div>' +
+        '<div class="mundos">' +
+          '<button class="mundo mundo-reading" data-m="reading">' +
+            '<span class="mundo-icono">' + iconoLibro() + '</span>' +
+            '<span class="mundo-nom">READING</span>' +
+            '<span class="mundo-sub">Words · Stories · Spelling</span>' +
+          '</button>' +
+          '<button class="mundo mundo-math" data-m="math">' +
+            '<span class="mundo-icono">' + iconoMate() + '</span>' +
+            '<span class="mundo-nom">MATH</span>' +
+            '<span class="mundo-sub">Facts · Money · Graphs</span>' +
+          '</button>' +
+        '</div>' +
+        '<button class="tienda-btn" id="btienda">' + esmeraldaSvg(18) +
+          ' Prize Shop · ' + e.esmeraldas + '</button>' +
+      '</section>';
+    el.querySelectorAll(".mundo").forEach(function (b) {
+      b.addEventListener("click", function () { irA("mundo", { mundo: b.dataset.m }); });
+    });
+    el.querySelector("#btienda").addEventListener("click", function () { irA("tienda"); });
+  };
+
+  function iconoLibro() {
+    return '<svg viewBox="0 0 16 16" width="46" height="46" shape-rendering="crispEdges" aria-hidden="true">' +
+      '<rect x="2" y="3" width="12" height="10" fill="#ffb03a"/>' +
+      '<rect x="7" y="3" width="2" height="10" fill="#e0913a"/>' +
+      '<rect x="3" y="5" width="3" height="1" fill="#5a3a22"/>' +
+      '<rect x="3" y="7" width="3" height="1" fill="#5a3a22"/>' +
+      '<rect x="10" y="5" width="3" height="1" fill="#5a3a22"/>' +
+      '<rect x="10" y="7" width="3" height="1" fill="#5a3a22"/></svg>';
+  }
+  function iconoMate() {
+    return '<svg viewBox="0 0 16 16" width="46" height="46" shape-rendering="crispEdges" aria-hidden="true">' +
+      '<rect x="2" y="2" width="12" height="12" fill="#6ea8ff"/>' +
+      '<rect x="4" y="7" width="4" height="1.5" fill="#12162a"/>' +
+      '<rect x="5.25" y="5.75" width="1.5" height="4" fill="#12162a"/>' +
+      '<rect x="9" y="7" width="4" height="1.5" fill="#12162a"/></svg>';
+  }
+
+  /* ==========================================================================
+     MUNDO — lista de niveles
+     ======================================================================== */
+
+  function nivelesDe(mundo) {
+    var e = Alm.leer();
+    var repasar = Pro.paraRepasar(8);
+    var lista = [];
+
+    if (mundo === "reading") {
+      lista.push({
+        id: "vce-semana", tit: "Spelling: VCe", sub: "made · safe · time · like",
+        etiqueta: "Esta semana en clase", prioridad: true,
+        juego: "spelling", cfg: { items: D.MODULO3.spellingSemana }
+      });
+      lista.push({
+        id: "sight-modulo-" + D.MODULO_ACTUAL,
+        tit: "Sight Words " + D.MODULO_ACTUAL,
+        sub: D.MODULO_PATRON[D.MODULO_ACTUAL],
+        etiqueta: "Módulo de ahora",
+        juego: "lecturaPalabras",
+        cfg: function () {
+          return { items: U.tomar(D.SIGHT[D.MODULO_ACTUAL], 10), modo: "practica" };
+        }
+      });
+      lista.push({
+        id: "sight-todos", tit: "All Sight Words",
+        sub: "Los 12 módulos · " + D.SIGHT_TOTAL + " palabras",
+        pantalla: "modulos"
+      });
+      lista.push({
+        id: "carrera", tit: "Speed Run", sub: "60 segundos · superá tu récord",
+        etiqueta: (e.destrezas["record-ppm"] ? "Récord: " + e.destrezas["record-ppm"].mejor + " ppm" : "Nuevo"),
+        juego: "lecturaPalabras",
+        cfg: { items: U.tomar(D.NONSENSE.cvce, 40), modo: "carrera", segundos: 60 }
+      });
+      lista.push({
+        id: "sopa", tit: "Word Search", sub: "Encontrá las palabras",
+        juego: "sopaLetras",
+        cfg: { items: U.tomar(D.MODULO3.vcePractica, 6), lado: 10, diagonales: true }
+      });
+      D.CUENTOS.forEach(function (c) {
+        lista.push({
+          id: "cuento-" + c.id, tit: c.titulo, sub: "Cuento + Challenger",
+          juego: "cuento", cfg: { cuento: c }
+        });
+      });
+      lista.push({
+        id: "cvc-fluidez", tit: "Nonsense Words", sub: "Decodificación pura",
+        juego: "lecturaPalabras",
+        cfg: { items: U.tomar(D.NONSENSE.cvc, 10), modo: "practica" }
+      });
+      if (repasar.length >= 4) {
+        lista.unshift({
+          id: "repaso", tit: "Repaso", sub: repasar.slice(0, 4).join(" · "),
+          etiqueta: "Lo que costó", prioridad: true,
+          juego: "lecturaPalabras",
+          cfg: { items: repasar.map(function (p) { return { p: p }; }), modo: "practica" }
+        });
+      }
+    } else {
+      lista.push({
+        id: "graficas-semana", tit: "Bar & Picture Graphs", sub: "Leer datos",
+        etiqueta: "Esta semana en clase", prioridad: true,
+        juego: "graficas", cfg: { cuantas: 5 }
+      });
+      lista.push({
+        id: "ecuaciones", tit: "Equation Cards", sub: "El hueco no siempre va al final",
+        juego: "operaciones", cfg: { items: D.ECUACIONES_CLASE.slice() }
+      });
+      lista.push({
+        id: "facts", tit: "Math Facts", sub: "Suma y resta hasta 20",
+        juego: "operaciones", cfg: { cuantas: 10, max: 20 }
+      });
+      lista.push({
+        id: "problemas", tit: "Word Problems", sub: "Paso a paso",
+        juego: "problemas", cfg: { cuantas: 4 }
+      });
+      lista.push({
+        id: "dinero-id", tit: "Coins & Bills", sub: "¿Cuánto vale?",
+        juego: "monedas", cfg: { modo: "identificar", rondas: 6 }
+      });
+      lista.push({
+        id: "dinero-contar", tit: "Count the Money", sub: "Sumá las monedas",
+        juego: "monedas", cfg: { modo: "contar", rondas: 6 }
+      });
+      lista.push({
+        id: "tienda-mate", tit: "The Shop", sub: "Comprar y dar vuelto",
+        juego: "monedas", cfg: { modo: "tienda", rondas: 6 }
+      });
+      lista.push({
+        id: "formas", tit: "Shapes", sub: "2D y 3D",
+        etiqueta: "Lo más flojo en i-Ready", juego: "formas", cfg: { rondas: 8 }
+      });
+    }
+    return lista;
+  }
+
+  pantallas.mundo = function (el, datos) {
+    var mundo = datos.mundo || "reading";
+    var lista = nivelesDe(mundo);
+    var e = Alm.leer();
+
+    el.innerHTML =
+      '<section class="pantalla mundo-' + mundo + '-tema">' +
+        '<button class="volver" id="volver">← Back</button>' +
+        '<h2 class="tit">' + (mundo === "reading" ? "READING" : "MATH") + '</h2>' +
+        '<div class="niveles" id="niveles"></div>' +
+      '</section>';
+    el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
+
+    var cont = el.querySelector("#niveles");
+    lista.forEach(function (n) {
+      var hechas = (e.destrezas[n.id] || {}).intentos || 0;
+      var b = document.createElement("button");
+      b.className = "nivel" + (n.prioridad ? " nivel-prio" : "");
+      b.innerHTML =
+        (n.etiqueta ? '<span class="nivel-tag">' + U.esc(n.etiqueta) + '</span>' : "") +
+        '<span class="nivel-tit">' + U.esc(n.tit) + '</span>' +
+        '<span class="nivel-sub">' + U.esc(n.sub) + '</span>';
+      b.addEventListener("click", function () {
+        if (n.pantalla) irA(n.pantalla, { mundo: mundo });
+        else irA("jugar", { mundo: mundo, nivel: n });
+      });
+      cont.appendChild(b);
+    });
+  };
+
+  /* --- los 12 módulos de sight words --------------------------------------
+     360 palabras en total. Cada módulo agrupa un patrón fonético, así que
+     elegir uno es elegir qué se practica, no solo qué palabras salen.        */
+
+  pantallas.modulos = function (el, datos) {
+    var e = Alm.leer();
+    el.innerHTML =
+      '<section class="pantalla">' +
+        '<button class="volver" id="volver">← Back</button>' +
+        '<h2 class="tit">Sight Words</h2>' +
+        '<p class="sub">12 módulos · ' + D.SIGHT_TOTAL + ' palabras del año</p>' +
+        '<div class="niveles" id="mods"></div>' +
+      '</section>';
+    el.querySelector("#volver").addEventListener("click", function () {
+      irA("mundo", { mundo: datos.mundo || "reading" });
+    });
+
+    var cont = el.querySelector("#mods");
+    Object.keys(D.SIGHT).forEach(function (k) {
+      var mod = parseInt(k, 10);
+      var palabras = D.SIGHT[mod];
+      // cuántas de este módulo ya domina
+      var dom = palabras.filter(function (w) {
+        var reg = e.palabras[w.p];
+        return reg && reg.verde >= 2 && reg.ultima === "verde";
+      }).length;
+      var pct = Math.round(dom / palabras.length * 100);
+
+      var b = document.createElement("button");
+      b.className = "nivel" + (mod === D.MODULO_ACTUAL ? " nivel-prio" : "");
+      b.innerHTML =
+        (mod === D.MODULO_ACTUAL ? '<span class="nivel-tag">Módulo de ahora</span>' : "") +
+        '<span class="nivel-tit">Module ' + mod + '</span>' +
+        '<span class="nivel-sub">' + U.esc(D.MODULO_PATRON[mod] || "") + '</span>' +
+        '<span class="mod-barra"><span class="mod-relleno" style="width:' + pct + '%"></span></span>' +
+        '<span class="mod-n">' + dom + ' / ' + palabras.length + ' dominadas</span>';
+      b.addEventListener("click", function () {
+        irA("jugar", { mundo: "reading", nivel: {
+          id: "sight-modulo-" + mod,
+          tit: "Module " + mod,
+          juego: "lecturaPalabras",
+          cfg: { items: U.tomar(palabras, 10), modo: "practica" }
+        }, volverA: "modulos" });
+      });
+      cont.appendChild(b);
+    });
+  };
+
+  pantallas.jugar = function (el, datos) {
+    var n = datos.nivel;
+    if (!n) return irA("casa");
+
+    // volver a donde se entró: al mundo, o a la lista de módulos
+    function volver() {
+      if (datos.volverA) irA(datos.volverA, { mundo: datos.mundo });
+      else irA("mundo", { mundo: datos.mundo });
+    }
+
+    var barra = document.createElement("div");
+    barra.className = "juego-barra";
+    barra.innerHTML = '<button class="volver" id="salir">← Salir</button>';
+    el.appendChild(barra);
+    barra.querySelector("#salir").addEventListener("click", function () {
+      volver();
+    });
+
+    var zona = document.createElement("div");
+    el.appendChild(zona);
+
+    var cfg = typeof n.cfg === "function" ? n.cfg() : n.cfg;
+    J[n.juego].iniciar(zona, cfg, function (res) {
+      Pro.registrar(n.id, res.total ? res.aciertos / res.total >= 0.7 : false,
+        { item: n.tit });
+      var e = Alm.leer();
+      e.sesiones.push({ t: Date.now(), nivel: n.id, mundo: datos.mundo,
+        aciertos: res.aciertos, total: res.total, esmeraldas: res.esmeraldas });
+      if (e.sesiones.length > 200) e.sesiones.shift();
+      Alm.guardar();
+      if (Pro.hayFatiga(n.id)) {
+        mostrarDescanso(el, function () { irA("mundo", { mundo: datos.mundo }); });
+      } else {
+        volver();
+      }
+    });
+  };
+
+  function mostrarDescanso(el, listo) {
+    el.innerHTML =
+      '<section class="pantalla centro">' +
+        '<h2 class="tit">Buen trabajo</h2>' +
+        '<p class="sub">Ya jugaste bastante. Mañana seguimos y vas a rendir más.</p>' +
+        '<div class="acc" id="acc"></div>' +
+      '</section>';
+    el.querySelector("#acc").appendChild(J.ui.boton("OK", "btn-primario", listo));
+  }
+
+  /* ==========================================================================
+     TIENDA DE PREMIOS
+     ======================================================================== */
+
+  pantallas.tienda = function (el) {
+    var e = Alm.leer();
+    el.innerHTML =
+      '<section class="pantalla">' +
+        '<button class="volver" id="volver">← Back</button>' +
+        '<h2 class="tit">Prize Shop</h2>' +
+        '<p class="sub">Tenés ' + e.esmeraldas + ' esmeraldas</p>' +
+        '<div class="premios" id="premios"></div>' +
+      '</section>';
+    el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
+    var cont = el.querySelector("#premios");
+
+    e.premios.forEach(function (p) {
+      var puede = e.esmeraldas >= p.costo;
+      var d = document.createElement("div");
+      d.className = "premio" + (puede ? " puede" : "");
+      d.innerHTML =
+        '<span class="premio-emoji">' + (p.emoji || "🎁") + '</span>' +
+        '<span class="premio-nom">' + U.esc(p.nombre) + '</span>' +
+        '<span class="premio-costo">' + esmeraldaSvg(14) + ' ' + p.costo + '</span>';
+      var b = document.createElement("button");
+      b.className = "btn " + (puede ? "btn-primario" : "btn-fantasma");
+      b.textContent = puede ? "Canjear" : "Faltan " + (p.costo - e.esmeraldas);
+      b.disabled = !puede;
+      b.addEventListener("click", function () {
+        if (!confirm("¿Canjear «" + p.nombre + "» por " + p.costo + " esmeraldas?\n\nPapá tiene que aprobarlo.")) return;
+        if (Eco.gastar(p.costo)) {
+          var e2 = Alm.leer();
+          e2.canjes.push({ t: Date.now(), premio: p.nombre, costo: p.costo, entregado: false });
+          Alm.guardar();
+          alert("¡Listo! Mostrale esto a papá.");
+          irA("tienda");
+        }
+      });
+      d.appendChild(b);
+      cont.appendChild(d);
+    });
+  };
+
+  /* ==========================================================================
+     PANEL DEL PAPÁ
+     ======================================================================== */
+
+  function pedirPin() {
+    // barrera simple: una cuenta que un chico de 7 no resuelve de memoria
+    var a = U.entero(11, 19), b = U.entero(11, 19);
+    var r = prompt("Panel de papá\n\n¿Cuánto es " + a + " × " + b + "?");
+    if (r === null) return;
+    if (parseInt(r, 10) === a * b) irA("panel");
+    else alert("No es correcto.");
+  }
+
+  pantallas.panel = function (el) {
+    var e = Alm.leer();
+    el.innerHTML =
+      '<section class="pantalla panel">' +
+        '<button class="volver" id="volver">← Salir del panel</button>' +
+        '<h2 class="tit">Panel de papá</h2>' +
+        '<nav class="panel-tabs">' +
+          '<button data-t="resumen" class="tab activo">Resumen</button>' +
+          '<button data-t="destrezas" class="tab">Destrezas</button>' +
+          '<button data-t="palabras" class="tab">Palabras</button>' +
+          '<button data-t="premios" class="tab">Premios</button>' +
+          '<button data-t="ajustes" class="tab">Ajustes</button>' +
+        '</nav>' +
+        '<div id="panelCuerpo"></div>' +
+      '</section>';
+    el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
+    var cuerpo = el.querySelector("#panelCuerpo");
+    var tabs = el.querySelectorAll(".tab");
+    tabs.forEach(function (t) {
+      t.addEventListener("click", function () {
+        tabs.forEach(function (x) { x.classList.remove("activo"); });
+        t.classList.add("activo");
+        pintarTab(t.dataset.t);
+      });
+    });
+    pintarTab("resumen");
+
+    function pintarTab(cual) {
+      var e = Alm.leer();
+      if (cual === "resumen") return resumen(e);
+      if (cual === "destrezas") return destrezas(e);
+      if (cual === "palabras") return palabras(e);
+      if (cual === "premios") return premios(e);
+      return ajustes(e);
+    }
+
+    function resumen(e) {
+      var hoy = U.hoy();
+      var sesHoy = e.sesiones.filter(function (s) {
+        return new Date(s.t).toISOString().slice(0, 10) === hoy;
+      });
+      var diag = e.diagnostico.resultados;
+      var trad = e.traduccionesUsadas.slice(-40);
+
+      cuerpo.innerHTML =
+        '<div class="tarjetas">' +
+          tarjeta("Esmeraldas", e.esmeraldas, "ganadas en total: " + e.esmeraldasGanadasTotal) +
+          tarjeta("Racha", e.racha.dias + " días", "último día: " + (e.racha.ultimoDia || "—")) +
+          tarjeta("Hoy", sesHoy.length + " niveles",
+                  sesHoy.reduce(function (s, x) { return s + (x.esmeraldas || 0); }, 0) + " esmeraldas") +
+          tarjeta("Récord lectura",
+                  (e.destrezas["record-ppm"] ? e.destrezas["record-ppm"].mejor : "—") + " ppm",
+                  "palabras por minuto") +
+        '</div>' +
+        (e.diagnostico.hecho ?
+          '<h3 class="panel-h3">Diagnóstico</h3>' +
+          '<div class="diag-tabla">' +
+            DIAG.map(function (d) {
+              var x = diag[d.id];
+              var pct = x ? x.pct : null;
+              var col = pct === null ? "" : pct >= 80 ? "verde" : pct >= 50 ? "amarillo" : "rojo";
+              return '<div class="diag-fila"><span>' + U.esc(d.tit) + '</span>' +
+                '<span class="diag-pct sem-' + col + '">' + (pct === null ? "—" : pct + "%") + '</span></div>';
+            }).join("") + '</div>'
+          : '<p class="nota">El diagnóstico todavía no se hizo.</p>') +
+        '<h3 class="panel-h3">Vocabulario que tuvo que traducir</h3>' +
+        (trad.length ?
+          '<p class="nota">Estas son las consignas donde tocó el botón ES. Dice qué inglés todavía no tiene.</p>' +
+          '<ul class="lista-simple">' + trad.slice(-12).reverse().map(function (t) {
+            return '<li>' + U.esc(t.texto.slice(0, 90)) + '</li>';
+          }).join("") + '</ul>'
+          : '<p class="nota">Todavía no usó la traducción.</p>');
+    }
+
+    function tarjeta(t, v, s) {
+      return '<div class="tarjeta"><span class="tarjeta-et">' + t + '</span>' +
+        '<span class="tarjeta-v">' + v + '</span>' +
+        '<span class="tarjeta-s">' + U.esc(s) + '</span></div>';
+    }
+
+    function destrezas(e) {
+      var ids = Object.keys(e.destrezas).filter(function (k) { return k !== "record-ppm"; });
+      if (!ids.length) return cuerpo.innerHTML = '<p class="nota">Todavía no hay datos.</p>';
+      ids.sort(function (a, b) {
+        var A = Pro.resumenDestreza(a), B = Pro.resumenDestreza(b);
+        return (A.pct === null ? 999 : A.pct) - (B.pct === null ? 999 : B.pct);
+      });
+      cuerpo.innerHTML =
+        '<p class="nota">Ordenado de peor a mejor: lo de arriba es donde hay que trabajar.</p>' +
+        '<div class="destrezas">' + ids.map(function (id) {
+          var r = Pro.resumenDestreza(id);
+          var col = r.pct === null ? "" : r.pct >= 80 ? "verde" : r.pct >= 50 ? "amarillo" : "rojo";
+          return '<div class="destreza">' +
+            '<span class="destreza-id">' + U.esc(id) + '</span>' +
+            '<div class="destreza-barra"><div class="destreza-relleno sem-fondo-' + col +
+              '" style="width:' + (r.pct || 0) + '%"></div></div>' +
+            '<span class="destreza-n">' + (r.pct === null ? "—" : r.pct + "%") +
+              ' <em>(' + r.intentos + ')</em></span></div>';
+        }).join("") + '</div>';
+    }
+
+    function palabras(e) {
+      var todas = Object.keys(e.palabras);
+      if (!todas.length) return cuerpo.innerHTML = '<p class="nota">Todavía no hay palabras.</p>';
+      var dominadas = Pro.dominadas();
+      var cuesta = Pro.paraRepasar(30);
+      cuerpo.innerHTML =
+        '<h3 class="panel-h3">Le cuestan (' + cuesta.length + ')</h3>' +
+        '<div class="chips">' + cuesta.map(function (p) {
+          var w = e.palabras[p];
+          return '<span class="chip chip-' + (w.ultima || "rojo") + '" data-p="' + U.esc(p) + '">' +
+            U.esc(p) + '</span>';
+        }).join("") + '</div>' +
+        '<h3 class="panel-h3">Ya las domina (' + dominadas.length + ')</h3>' +
+        '<div class="chips">' + dominadas.map(function (p) {
+          return '<span class="chip chip-verde">' + U.esc(p) + '</span>';
+        }).join("") + '</div>' +
+        '<p class="nota">Tocá una palabra que le costó para corregir el semáforo si vos la escuchaste bien.</p>';
+      cuerpo.querySelectorAll(".chips .chip[data-p]").forEach(function (c) {
+        c.addEventListener("click", function () {
+          if (!confirm('¿Marcar "' + c.dataset.p + '" como bien dicha?')) return;
+          Pro.registrarPalabra(c.dataset.p, "verde", null);
+          pintarTab("palabras");
+        });
+      });
+    }
+
+    function premios(e) {
+      cuerpo.innerHTML =
+        '<h3 class="panel-h3">Premios disponibles</h3>' +
+        '<div class="premios-edit" id="pe"></div>' +
+        '<div class="acc" id="accPremio"></div>' +
+        '<h3 class="panel-h3">Canjes pedidos</h3>' +
+        (e.canjes.length ?
+          '<ul class="lista-simple">' + e.canjes.slice().reverse().map(function (c, i) {
+            return '<li>' + new Date(c.t).toLocaleDateString() + ' — ' + U.esc(c.premio) +
+              ' (' + c.costo + ') ' + (c.entregado ? "✓ entregado" : "· pendiente") + '</li>';
+          }).join("") + '</ul>'
+          : '<p class="nota">Ninguno todavía.</p>');
+
+      var pe = cuerpo.querySelector("#pe");
+      e.premios.forEach(function (p, i) {
+        var d = document.createElement("div");
+        d.className = "premio-edit";
+        d.innerHTML =
+          '<input class="entrada" value="' + U.esc(p.nombre) + '" data-c="nombre">' +
+          '<input class="entrada entrada-num" type="number" value="' + p.costo + '" data-c="costo">';
+        var bq = document.createElement("button");
+        bq.className = "btn btn-fantasma";
+        bq.textContent = "Quitar";
+        bq.addEventListener("click", function () {
+          var e2 = Alm.leer(); e2.premios.splice(i, 1); Alm.guardar(); pintarTab("premios");
+        });
+        d.appendChild(bq);
+        d.querySelectorAll("input").forEach(function (inp) {
+          inp.addEventListener("change", function () {
+            var e2 = Alm.leer();
+            if (inp.dataset.c === "costo") e2.premios[i].costo = parseInt(inp.value, 10) || 0;
+            else e2.premios[i].nombre = inp.value;
+            Alm.guardar();
+          });
+        });
+        pe.appendChild(d);
+      });
+
+      cuerpo.querySelector("#accPremio").appendChild(
+        J.ui.boton("+ Agregar premio", "btn-suave", function () {
+          var nom = prompt("Nombre del premio:");
+          if (!nom) return;
+          var c = parseInt(prompt("¿Cuántas esmeraldas cuesta?", "100"), 10);
+          if (!c) return;
+          var e2 = Alm.leer();
+          e2.premios.push({ id: "r" + Date.now(), nombre: nom, costo: c, emoji: "🎁" });
+          Alm.guardar(); pintarTab("premios");
+        }));
+    }
+
+    function ajustes(e) {
+      cuerpo.innerHTML =
+        '<div class="ajustes">' +
+          '<label class="ajuste"><input type="checkbox" id="aVoz"' +
+            (e.ajustes.voz ? " checked" : "") + '> Voz encendida</label>' +
+          '<label class="ajuste"><input type="checkbox" id="aAdulto"' +
+            (e.ajustes.modoAdulto ? " checked" : "") +
+            '> Modo adulto: yo marco la pronunciación (más preciso que el micrófono)</label>' +
+        '</div>' +
+        '<h3 class="panel-h3">Estado técnico</h3>' +
+        '<ul class="lista-simple">' +
+          '<li>Micrófono: ' + (Voz.hayMicrofono ? "disponible" : "NO disponible") + '</li>' +
+          '<li>Voz en inglés: ' + (Voz.hayVozInglesa() ? "sí" : "NO") +
+            (Voz.hayVozInglesa() && !Voz.esUS() ? " — <b>no es americana</b>, instalá English (United States)" : "") + '</li>' +
+          '<li>Voces: ' + U.esc(Voz.vocesDisponibles().join(", ") || "ninguna") + '</li>' +
+          '<li>Sincronización en la nube: ' + (Alm.hayNube() ? "activa" : "no configurada") + '</li>' +
+        '</ul>' +
+        '<h3 class="panel-h3">Datos</h3>' +
+        '<div class="acc" id="accDatos"></div>';
+
+      cuerpo.querySelector("#aVoz").addEventListener("change", function () {
+        var e2 = Alm.leer(); e2.ajustes.voz = this.checked; Alm.guardar();
+      });
+      cuerpo.querySelector("#aAdulto").addEventListener("change", function () {
+        var e2 = Alm.leer(); e2.ajustes.modoAdulto = this.checked; Alm.guardar();
+      });
+
+      var accD = cuerpo.querySelector("#accDatos");
+      accD.appendChild(J.ui.boton("Descargar progreso", "btn-suave", function () {
+        var blob = new Blob([Alm.exportar()], { type: "application/json" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "progreso-gabriel-" + U.hoy() + ".json";
+        a.click();
+      }));
+      accD.appendChild(J.ui.boton("Rehacer diagnóstico", "btn-suave", function () {
+        if (!confirm("¿Volver a hacer el diagnóstico?")) return;
+        var e2 = Alm.leer();
+        e2.diagnostico = { hecho: false, fecha: null, resultados: {} };
+        Alm.guardar(); irA("introDiag");
+      }));
+      accD.appendChild(J.ui.boton("Borrar todo", "btn-fantasma", function () {
+        if (!confirm("¿Borrar TODO el progreso? No se puede deshacer.")) return;
+        Alm.reiniciar(); irA("bienvenida");
+      }));
+    }
+  };
+
+  /* ==========================================================================
+     ARRANQUE
+     ======================================================================== */
+
+  function arrancar() {
+    app = document.getElementById("app");
+    hud = document.getElementById("hud");
+    Alm.iniciarSupabase();
+    var e = Alm.leer();
+    if (!e.jugador.avatar) irA("bienvenida");
+    else if (!e.diagnostico.hecho) irA("introDiag");
+    else irA("casa");
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", arrancar);
+  } else { arrancar(); }
+
+  global.APP = { irA: function (n, d) { irA(n, d); } };
+
+})(window);

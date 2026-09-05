@@ -1,0 +1,19 @@
+# Material escolar de Gabriel: escaneos, fotos de tareas, reportes de i-Ready
+# con su nombre completo y su número de estudiante. No se sube a ningún lado,
+# ni siquiera a un repo privado. Vive solo en la PC.
+contenido/entrada/
+contenido/procesado/
+
+# Progreso: son datos del chico y se sincronizan por Supabase, no por git
+datos/
+web/datos/
+
+# Paquetes de despliegue, se regeneran
+*.zip
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
+__pycache__/
+*.pyc
