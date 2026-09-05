@@ -800,7 +800,9 @@
           '<li>Voz en inglés: ' + (Voz.hayVozInglesa() ? "sí" : "NO") +
             (Voz.hayVozInglesa() && !Voz.esUS() ? " — <b>no es americana</b>, instalá English (United States)" : "") + '</li>' +
           '<li>Voces: ' + U.esc(Voz.vocesDisponibles().join(", ") || "ninguna") + '</li>' +
-          '<li>Sincronización en la nube: ' + (Alm.hayNube() ? "activa" : "no configurada") + '</li>' +
+          '<li>Sincronización en la nube: ' + (Alm.esPrueba()
+            ? "<b>apagada — estás en MODO PRUEBA</b>"
+            : Alm.hayNube() ? "activa" : "no configurada") + '</li>' +
         '</ul>' +
         '<h3 class="panel-h3">Datos</h3>' +
         '<div class="acc" id="accDatos"></div>';
@@ -837,9 +839,31 @@
      ARRANQUE
      ======================================================================== */
 
+  /* Aviso permanente de modo prueba. Tiene que ser imposible de confundir:
+     si el papá cree que está jugando en serio y no lo está, el diagnóstico
+     que yo lea después va a estar vacío y no vamos a entender por qué. */
+  function bannerPrueba() {
+    var b = document.createElement("div");
+    b.className = "banner-prueba";
+    b.innerHTML =
+      '<span class="bp-tag">MODO PRUEBA</span>' +
+      '<span class="bp-txt">Nada de esto se guarda en el progreso de Gabriel</span>';
+    var x = document.createElement("button");
+    x.className = "bp-btn";
+    x.textContent = "Borrar y salir";
+    x.addEventListener("click", function () {
+      if (!confirm("¿Borrar la partida de prueba y volver al juego real?")) return;
+      Alm.borrarPrueba();
+      location.href = location.pathname;
+    });
+    b.appendChild(x);
+    document.body.insertBefore(b, document.body.firstChild);
+  }
+
   function arrancar() {
     app = document.getElementById("app");
     hud = document.getElementById("hud");
+    if (Alm.esPrueba()) bannerPrueba();
     Alm.iniciarSupabase();
     var e = Alm.leer();
     if (!e.jugador.avatar) irA("bienvenida");

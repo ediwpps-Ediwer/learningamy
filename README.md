@@ -94,6 +94,25 @@ El motor del juego no conoce ninguna palabra en particular: solo sabe jugar
 
 ---
 
+## Modo prueba — jugar sin ensuciarle el progreso
+
+Agregá **`?prueba`** al final de la dirección:
+
+```
+https://learningamy.netlify.app/?prueba
+```
+
+Aparece una franja naranja arriba que no se puede confundir, y mientras esté ahí:
+
+- el progreso se guarda en **otra llave** del navegador, no pisa la partida real
+- **no se crea el cliente de Supabase**, así que no hay forma de que toque la nube
+- el botón **Borrar y salir** limpia la partida de prueba y te devuelve al juego real
+
+> Una ventana de incógnito **no** alcanzaría: aislaría el navegador, pero la app
+> igual escribiría en la fila `gabriel` de Supabase. Por eso hace falta este modo.
+
+Sirve para lo mismo de siempre: probar un nivel nuevo antes de que Gabriel lo vea.
+
 ## Panel de papá
 
 Se entra por el botón 👤 arriba a la derecha. Pide una multiplicación de dos

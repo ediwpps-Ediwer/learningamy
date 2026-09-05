@@ -14,7 +14,17 @@
      ======================================================================== */
 
   var Almacen = (function () {
-    var LLAVE = "gaby.v1";
+    /* MODO PRUEBA — para que el papá pueda jugar sin ensuciar los datos de
+       Gabriel. Se activa agregando ?prueba a la dirección.
+       Hace dos cosas, y las dos importan:
+         1. guarda en OTRA llave del navegador, así no pisa la partida real
+         2. NO crea el cliente de Supabase, así no hay forma de que toque la nube
+       Una ventana de incógnito no alcanzaría: aislaría el navegador pero
+       igual escribiría en la fila 'gabriel' de la base. */
+    var MODO_PRUEBA = /[?&]prueba\b/i.test(location.search) ||
+                      /\bprueba\b/i.test(location.hash);
+
+    var LLAVE = MODO_PRUEBA ? "gaby.prueba" : "gaby.v1";
     var enMemoria = null;
     var supa = null;          // cliente Supabase cuando haya claves
     var pendiente = null;     // debounce de escritura remota
@@ -64,6 +74,7 @@
 
     /* --- Supabase (se activa cuando CONFIG tenga url + anonKey) ----------- */
     function iniciarSupabase() {
+      if (MODO_PRUEBA) return;   // en prueba no se crea el cliente: nada toca la nube
       if (!CFG.supabaseUrl || !CFG.supabaseAnonKey || !global.supabase) return;
       try {
         supa = global.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
@@ -101,7 +112,12 @@
       },
       iniciarSupabase: iniciarSupabase,
       traerRemoto: traerRemoto,
-      hayNube: function () { return !!supa; }
+      hayNube: function () { return !!supa; },
+      esPrueba: function () { return MODO_PRUEBA; },
+      borrarPrueba: function () {
+        try { localStorage.removeItem("gaby.prueba"); } catch (e) {}
+        enMemoria = null;
+      }
     };
   })();
 
