@@ -10,9 +10,11 @@ window.CONFIG = {
   // Proyecto de Supabase de Gabriel
   supabaseUrl: "https://qdyssqmggbmwoctfnnoi.supabase.co",
 
-  // PENDIENTE: pegar acá la anon / publishable key.
-  // Supabase → Project Settings → API → "anon public"
-  supabaseAnonKey: "",
+  // Publishable key (formato nuevo de Supabase). Es la que reemplaza a la
+  // vieja `anon public` y cumple el mismo rol: identifica al proyecto y actúa
+  // como el rol `anon`. Va dentro del navegador a propósito; quien protege los
+  // datos son las políticas RLS de la tabla `progreso`, no esta clave.
+  supabaseAnonKey: "sb_publishable_8QBAJcwwb9WwWpY1eZoHvw_jsph9cTZ",
 
   // identificador del jugador dentro de la tabla `progreso`
   jugadorId: "gabriel",
