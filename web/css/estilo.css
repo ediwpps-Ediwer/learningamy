@@ -197,6 +197,7 @@ button, input { font-family: inherit; font-size: inherit; }
   font-family: var(--f-pixel); font-size: clamp(28px, 9vw, 46px);
   margin: 4px 0 0; letter-spacing: .06em; color: var(--esmeralda);
 }
+.portada-nota { max-width: 30ch; text-align: center; margin-top: 10px; }
 .portada-sub { font-family: var(--f-pixel); font-size: 13px; color: var(--suave); margin: 0 0 14px; }
 
 /* --------------------------------------------------------------- avatar --- */

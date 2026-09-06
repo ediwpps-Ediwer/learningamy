@@ -77,9 +77,19 @@
         '<div class="portada-acc"></div>' +
       '</section>';
     var acc = el.querySelector(".portada-acc");
-    acc.appendChild(J.ui.boton("▶ LOG IN", "btn-primario btn-grande", function () {
+    acc.appendChild(J.ui.boton("▶ PLAY", "btn-primario btn-grande", function () {
+      Alm.ponerModo("local");
+      rutear();
+    }));
+    acc.appendChild(J.ui.boton("Entrar con cuenta", "btn-fantasma", function () {
+      Alm.ponerModo("cuenta");
       irA("entrar");
     }));
+    var pie = document.createElement("p");
+    pie.className = "nota portada-nota";
+    pie.textContent = "Con un solo jugador, PLAY alcanza. Las cuentas hacen falta " +
+      "cuando juega más de un chico en el mismo aparato.";
+    el.querySelector(".portada").appendChild(pie);
   };
 
   /* --- entrar con usuario y contraseña ------------------------------------
@@ -690,8 +700,9 @@
           '<button data-t="jugadores" class="tab">Jugadores</button>' +
           '<button data-t="ajustes" class="tab">Ajustes</button>' +
         '</nav>' +
-        '<p class="panel-quien">Sesión de <b>' +
-          U.esc(N.Auth.miNombre() || (Alm.esPrueba() ? "modo prueba" : "—")) + '</b></p>' +
+        '<p class="panel-quien">' + (Alm.esPrueba() ? 'Modo <b>prueba</b>'
+          : Alm.modo() === "cuenta" ? 'Sesión de <b>' + U.esc(N.Auth.miNombre() || "—") + '</b>'
+          : 'Jugador <b>' + U.esc(Alm.leer().jugador.nombre || "—") + '</b> · sin cuenta') + '</p>' +
         '<div id="panelCuerpo"></div>' +
       '</section>';
     el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
@@ -723,6 +734,37 @@
           'Salí del modo prueba para administrar jugadores.</p>';
         return;
       }
+
+      /* Sin cuenta: un solo jugador, todo en este aparato. */
+      if (Alm.modo() !== "cuenta") {
+        cuerpo.innerHTML =
+          '<div class="tarjeta"><span class="tarjeta-et">Modo actual</span>' +
+          '<span class="tarjeta-v">Un jugador</span>' +
+          '<span class="tarjeta-s">sin cuenta · todo en este aparato</span></div>' +
+          '<p class="nota">Así está bien mientras juegue Gabriel solo: no hay ' +
+          'contraseña que escribir y funciona sin internet.</p>' +
+          '<h3 class="panel-h3">¿Cuándo conviene pasar a cuentas?</h3>' +
+          '<ul class="lista-simple">' +
+            '<li>Cuando juegue más de un chico en el mismo aparato — sin cuentas ' +
+            'se mezclan los progresos.</li>' +
+            '<li>Cuando quieras seguir el progreso desde otro aparato.</li>' +
+          '</ul>' +
+          '<p class="nota">Requiere dos pasos en Supabase (crear la tabla y apagar ' +
+          'la confirmación por correo). El progreso que ya tenga <b>no se pierde</b>: ' +
+          'se sube a la cuenta nueva.</p>' +
+          '<div class="acc" id="accModo"></div>';
+        cuerpo.querySelector("#accModo").appendChild(
+          J.ui.boton("Pasar a cuentas", "btn-suave", function () {
+            if (!confirm(
+              "Para usar cuentas hacen falta dos pasos en Supabase.\n\n" +
+              "Si ya los hiciste, seguí. Si no, el juego no va a poder crear " +
+              "cuentas todavía.\n\n¿Seguir?")) return;
+            Alm.ponerModo("cuenta");
+            irA("entrar");
+          }));
+        return;
+      }
+
       var codigo = N.Auth.miCodigo();
       cuerpo.innerHTML =
         '<h3 class="panel-h3">Tu código de familia</h3>' +
@@ -990,12 +1032,12 @@
         if (!confirm("¿Borrar TODO el progreso? No se puede deshacer.")) return;
         Alm.reiniciar(); irA("casa");
       }));
-      if (!Alm.esPrueba()) {
+      if (Alm.modo() === "cuenta") {
         accD.appendChild(J.ui.boton("Cerrar sesión", "btn-fantasma", function () {
           if (!confirm("¿Cerrar la sesión y volver a la pantalla de entrada?")) return;
           N.Auth.salir().then(function () {
             Alm.olvidar();
-            irA("bienvenida");
+            irA("entrar");
           });
         }));
       }
@@ -1032,9 +1074,13 @@
     hud = document.getElementById("hud");
     if (Alm.esPrueba()) { bannerPrueba(); return rutear(); }
 
+    var m = Alm.modo();
+    if (m === "local") return rutear();          // un jugador, sin cuenta
+    if (m !== "cuenta") return irA("bienvenida"); // primera vez: que elija
+
     app.innerHTML = '<p class="cargando">Cargando…</p>';
     N.Auth.restaurar().then(function () {
-      if (!N.Auth.haySesion()) return irA("bienvenida");
+      if (!N.Auth.haySesion()) return irA("entrar");
       Alm.adoptarRemoto();   // si otro aparato tiene más avance, se toma ese
       rutear();
     });

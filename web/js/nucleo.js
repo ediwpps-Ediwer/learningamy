@@ -175,8 +175,26 @@
     var enMemoria = null;
     var pendiente = null;
 
+    /* Tres modos:
+         "local"  — un solo jugador, sin cuenta. Todo vive en este aparato.
+         "cuenta" — usuario y contraseña. Hace falta cuando juega más de uno,
+                    para que nadie entre en la cuenta de otro.
+         "prueba" — ?prueba en la dirección: no toca nada de nadie.
+       Se arranca en "local" porque es lo que menos estorba, y se pasa a
+       "cuenta" el día que haga falta. El progreso local se puede subir. */
+    function modo() {
+      if (MODO_PRUEBA) return "prueba";
+      try { return localStorage.getItem("gaby.modo") || null; }
+      catch (e) { return null; }
+    }
+    function ponerModo(m) {
+      try { localStorage.setItem("gaby.modo", m); } catch (e) {}
+      enMemoria = null;
+    }
+
     function llave() {
       if (MODO_PRUEBA) return "gaby.prueba";
+      if (modo() === "local") return "gaby.local";
       var u = Auth.idUsuario();
       return u ? ("gaby.u." + u) : "gaby.anon";
     }
@@ -219,7 +237,7 @@
     }
 
     function sincronizar() {
-      if (MODO_PRUEBA || !Auth.haySesion()) return;
+      if (modo() !== "cuenta" || !Auth.haySesion()) return;
       var c = Auth.cliente();
       if (!c) return;
       clearTimeout(pendiente);
@@ -263,8 +281,21 @@
         try { enMemoria = JSON.parse(txt); guardar(); return true; }
         catch (e) { return false; }
       },
-      hayNube: function () { return !MODO_PRUEBA && Auth.haySesion(); },
+      hayNube: function () { return modo() === "cuenta" && Auth.haySesion(); },
+      modo: modo,
+      ponerModo: ponerModo,
       esPrueba: function () { return MODO_PRUEBA; },
+
+      /* Pasar de jugar sin cuenta a jugar con cuenta, llevándose el progreso. */
+      subirLoLocal: function () {
+        var local = null;
+        try { local = JSON.parse(localStorage.getItem("gaby.local") || "null"); }
+        catch (e) {}
+        if (!local || !Auth.haySesion()) return false;
+        enMemoria = local;
+        guardar();
+        return true;
+      },
       borrarPrueba: function () {
         try { localStorage.removeItem("gaby.prueba"); } catch (e) {}
         enMemoria = null;
