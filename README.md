@@ -76,7 +76,7 @@ El motor del juego no conoce ninguna palabra en particular: solo sabe jugar
 | Juego | Qué entrena | De dónde salió |
 |---|---|---|
 | Word Reading | Pronunciación con semáforo, palabra por palabra | Listas de sight words M1–M10 |
-| Speed Run | Fluidez: cuántas palabras en 60 s | Hojas de Nonsense Word Fluency |
+| Speed Run | Fluidez **a un ritmo elegido**: se elige la velocidad en palabras por minuto, las palabras aparecen a ese ritmo y él las dice a medida que salen. Registra cuántas dijo bien a esa velocidad | Hojas de Nonsense Word Fluency |
 | Spelling | **Escribir** la palabra — su hueco más grande (0 % en la prueba) | Spelling vCe de esta semana |
 | Word Search | Reconocimiento visual contra reloj | Palabras VCe del Módulo 3 |
 | Story + Challenger | Personajes, ambiente, diálogo, moraleja | Cuentos decodificables propios |

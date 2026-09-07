@@ -3,13 +3,14 @@
    (todo menos el reconocimiento de voz, que necesita conexión en Android)
    ========================================================================== */
 
-var CACHE = "blockquest-v1";
+var CACHE = "blockquest-v2";
 
 var ARCHIVOS = [
   "./",
   "./index.html",
   "./css/estilo.css",
   "./js/config.js",
+  "./js/efectos.js",
   "./js/datos.js",
   "./js/nucleo.js",
   "./js/juegos.js",

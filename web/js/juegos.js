@@ -15,22 +15,95 @@
      UI compartida
      ======================================================================== */
 
+  var EF = global.EFECTOS;
+  var Snd = EF.Sonido, Part = EF.Particulas, Racha = EF.Racha, Compa = EF.Compa;
+
   var ui = {
-    marco: function (el, titulo, subtitulo) {
+    /* `pasos` dibuja la pista de bloques: se ve cuánto falta para terminar,
+       que es la diferencia entre "una lista de ejercicios" y "un nivel". */
+    marco: function (el, titulo, subtitulo, pasos) {
+      Racha.reiniciar();
+      var pista = "";
+      if (pasos > 0) {
+        pista = '<div class="pista" id="pista">';
+        for (var i = 0; i < pasos; i++) pista += '<span class="pista-bloque"></span>';
+        pista += '</div>';
+      }
       el.innerHTML =
         '<div class="juego">' +
           '<header class="juego-top">' +
-            '<h2 class="juego-tit">' + U.esc(titulo) + '</h2>' +
-            (subtitulo ? '<p class="juego-sub">' + U.esc(subtitulo) + '</p>' : '') +
+            '<span class="compa-caja" id="compa">' + Compa.svg("normal", 44) + '</span>' +
+            '<span class="juego-tit-caja">' +
+              '<h2 class="juego-tit">' + U.esc(titulo) + '</h2>' +
+              (subtitulo ? '<p class="juego-sub">' + U.esc(subtitulo) + '</p>' : '') +
+            '</span>' +
+            '<span class="racha" id="racha" hidden></span>' +
           '</header>' +
+          pista +
           '<div class="juego-cuerpo" id="cuerpo"></div>' +
           '<footer class="juego-pie" id="pie"></footer>' +
         '</div>';
-      return {
+
+      var m = {
         cuerpo: el.querySelector("#cuerpo"),
         pie: el.querySelector("#pie"),
-        top: el.querySelector(".juego-top")
+        top: el.querySelector(".juego-top"),
+        compa: el.querySelector("#compa"),
+        rachaEl: el.querySelector("#racha"),
+        pistaEl: el.querySelector("#pista")
       };
+
+      /* marca el avance en la pista */
+      m.paso = function (n, color) {
+        if (!m.pistaEl) return;
+        var b = m.pistaEl.children[n];
+        if (b) { b.className = "pista-bloque hecho sem-fondo-" + (color || "verde"); }
+      };
+
+      /* Todo acierto y todo error pasa por acá. Un solo lugar para el sonido,
+         las partículas, la racha y el pago — así ningún juego se olvida de
+         alguna parte y todos se sienten igual. */
+      var pasoActual = 0;
+      m.premiar = function (elemento, color, base) {
+        var pago = 0;
+        m.paso(pasoActual++, color === "verde" ? "verde"
+                           : color === "amarillo" ? "amarillo" : "rojo");
+        if (color === "verde") {
+          var n = Racha.acierto();
+          var mult = Racha.multiplicador();
+          pago = (base != null ? base : Eco.PAGOS.acierto) * mult;
+          Eco.dar(pago, "juego");
+          Snd.acierto();
+          if (n >= 3) Snd.combo(n);
+          Part.estallar(elemento, 10 + Math.min(n, 8));
+          Part.flotar(elemento, "+" + pago, "#2ee6a0");
+          Compa.reaccionar(m.compa, n >= 5 ? "fiesta" : "feliz", 44);
+        } else if (color === "amarillo") {
+          Racha.fallo();
+          pago = base != null ? base : Eco.PAGOS.amarillo;
+          if (pago) { Eco.dar(pago, "juego"); Part.flotar(elemento, "+" + pago, "#ffcc4d"); }
+          Snd.casi();
+          Compa.reaccionar(m.compa, "pensando", 44);
+        } else {
+          Racha.fallo();
+          Snd.error();
+          Part.sacudir(elemento);
+          Compa.reaccionar(m.compa, "ups", 44);
+        }
+        // insignia de racha
+        var r = Racha.valor();
+        if (r >= 3) {
+          m.rachaEl.hidden = false;
+          m.rachaEl.textContent = "🔥 " + r + "  x" + Racha.multiplicador();
+          m.rachaEl.classList.remove("late"); void m.rachaEl.offsetWidth;
+          m.rachaEl.classList.add("late");
+        } else {
+          m.rachaEl.hidden = true;
+        }
+        return pago;
+      };
+
+      return m;
     },
 
     boton: function (texto, clase, alTocar) {
@@ -117,14 +190,31 @@
     /* pantalla de cierre de nivel */
     fin: function (el, datos, alSalir) {
       var pct = datos.total ? Math.round(datos.aciertos / datos.total * 100) : 0;
+      var medalla = pct >= 90 ? "★★★" : pct >= 70 ? "★★" : pct >= 40 ? "★" : "";
+      var mejorRacha = Racha.mejor();
+
       el.innerHTML =
         '<div class="fin">' +
+          (medalla ? '<div class="fin-estrellas">' + medalla + '</div>' : '') +
           '<div class="fin-emeralds">+' + datos.esmeraldas + ' <span>esmeraldas</span></div>' +
-          '<div class="fin-barra"><div class="fin-relleno" style="width:' + pct + '%"></div></div>' +
+          '<div class="fin-barra"><div class="fin-relleno" style="width:0%"></div></div>' +
           '<p class="fin-pct">' + datos.aciertos + ' de ' + datos.total + '  ·  ' + pct + '%</p>' +
+          (mejorRacha >= 3 ? '<p class="fin-racha">🔥 Mejor racha: ' + mejorRacha + ' seguidas</p>' : '') +
           (datos.extra ? '<p class="fin-extra">' + U.esc(datos.extra) + '</p>' : '') +
+          '<div class="fin-compa">' + Compa.svg(pct >= 70 ? "fiesta" : "normal", 68) + '</div>' +
           '<div class="fin-acc"></div>' +
         '</div>';
+
+      // la barra se llena a la vista: el cierre tiene que sentirse como premio
+      var relleno = el.querySelector(".fin-relleno");
+      requestAnimationFrame(function () {
+        relleno.style.transition = "width .9s cubic-bezier(.2,.8,.3,1)";
+        relleno.style.width = pct + "%";
+      });
+      if (pct >= 70) Snd.nivel(); else Snd.moneda();
+      var caja = el.querySelector(".fin-emeralds");
+      if (datos.esmeraldas > 0) setTimeout(function () { Part.estallar(caja, 18); }, 250);
+
       var acc = el.querySelector(".fin-acc");
       acc.appendChild(ui.boton("Seguir", "btn-primario", alSalir));
     }
@@ -214,8 +304,7 @@
             Pro.registrarPalabra(w.p, r.color, ms);
             Pro.registrar(lecturaPalabras.destreza, r.color === "verde",
               { ms: ms, item: w.p, semaforo: r.color });
-            var pago = Eco.PAGOS[r.color] || 0;
-            gan += Eco.dar(pago, "lectura");
+            gan += m.premiar(tarjeta, r.color, Eco.PAGOS[r.color]);
             if (r.color === "verde") aciertos++;
 
             estado.className = "estado sem-" + r.color;
@@ -267,7 +356,7 @@
               Pro.registrarPalabra(w.p, par[0], 0);
               Pro.registrar(lecturaPalabras.destreza, par[0] === "verde",
                 { item: w.p, semaforo: par[0] });
-              gan += Eco.dar(Eco.PAGOS[par[0]] || 0, "lectura");
+              gan += m.premiar(tarjeta, par[0], Eco.PAGOS[par[0]]);
               if (par[0] === "verde") aciertos++;
               i++; pintar();
             }));
@@ -283,80 +372,293 @@
         pintar();
       }
 
-      /* --- modo carrera: 60 s continuos, mide palabras por minuto -------- */
+      /* --- modo carrera: las palabras aparecen A UN RITMO ELEGIDO ---------
+         Antes era una grilla y 60 segundos libres. Esto es mejor para lo que
+         le hace falta: se elige una velocidad en palabras por minuto, las
+         palabras aparecen a ese ritmo, y él las va diciendo a medida que
+         salen. Marcar el ritmo es como se entrena fluidez de verdad — el
+         objetivo deja de ser "leer rápido" y pasa a ser "seguir el pulso",
+         que es mucho más claro para un chico de 7.
+         Se registra cuántas dijo bien A ESA velocidad, así se puede subir de
+         a poco y ver el progreso real.                                      */
+
       function carrera() {
-        var segundos = cfg.segundos || 60;
-        m.cuerpo.innerHTML = "";
-        var rejilla = document.createElement("div");
-        rejilla.className = "rejilla-palabras";
-        palabras.forEach(function (w, k) {
-          var c = document.createElement("div");
-          c.className = "celda-palabra";
-          c.dataset.i = k;
-          c.textContent = w.p;
-          rejilla.appendChild(c);
-        });
-        m.cuerpo.appendChild(rejilla);
+        elegirVelocidad();
 
-        var reloj = document.createElement("div");
-        reloj.className = "reloj";
-        reloj.textContent = segundos;
-        m.top.appendChild(reloj);
-
-        m.pie.innerHTML = "";
-        var bIr = ui.boton("▶ START", "btn-primario btn-grande", arrancar);
-        m.pie.appendChild(bIr);
-
-        function arrancar() {
+        function elegirVelocidad() {
+          var e = N.Almacen.leer();
+          var rec = (e.destrezas["record-ppm"] || {}).mejor || 0;
+          m.cuerpo.innerHTML = "";
           m.pie.innerHTML = "";
-          var quedan = segundos, leidas = 0, verdes = 0, gan = 0;
-          var resultados = [];
-          var idx = 0;   // se avanza en orden, como una prueba de fluidez real
 
-          var t = setInterval(function () {
-            quedan--; reloj.textContent = quedan;
-            if (quedan <= 0) { clearInterval(t); }
-          }, 1000);
+          var cab = document.createElement("div");
+          cab.className = "vel-cab";
+          cab.innerHTML =
+            '<h3 class="vel-tit">¿A qué velocidad?</h3>' +
+            '<p class="vel-sub">Las palabras van a ir apareciendo solas. ' +
+            'Decilas en voz alta apenas las veas.</p>' +
+            (rec ? '<p class="vel-rec">Tu récord: <b>' + rec + '</b> palabras por minuto</p>' : "");
+          m.cuerpo.appendChild(cab);
 
-          Voz.escucharCarrera(segundos, function (parcial) {
-            // marca en vivo lo que va reconociendo, en orden
-            var trozos = String(parcial).toLowerCase().split(/\s+/).filter(Boolean);
-            trozos.forEach(function (tk) {
-              if (idx >= palabras.length) return;
-              var w = palabras[idx];
-              var r = Sem.evaluar(w, { alternativas: [{ t: tk, c: null }] });
-              if (r.color === "rojo") return;   // quizá todavía no llegó a esa
-              var celda = rejilla.querySelector('[data-i="' + idx + '"]');
-              if (celda && !celda.classList.contains("marcada")) {
-                celda.classList.add("marcada", "sem-fondo-" + r.color);
-                resultados.push({ w: w, r: r, ms: 0 });
-                Pro.registrarPalabra(w.p, r.color, 0);
-                leidas++;
-                if (r.color === "verde") verdes++;
-                gan += Eco.dar(Eco.PAGOS[r.color] || 0, "carrera");
-                idx++;
+          var caja = document.createElement("div");
+          caja.className = "vel-opciones";
+
+          [
+            { ppm: 15, nom: "Muy lento", desc: "1 cada 4 segundos" },
+            { ppm: 20, nom: "Lento",     desc: "1 cada 3 segundos" },
+            { ppm: 30, nom: "Normal",    desc: "1 cada 2 segundos" },
+            { ppm: 40, nom: "Rápido",    desc: "1 cada 1.5 segundos" },
+            { ppm: 60, nom: "Muy rápido", desc: "1 por segundo" }
+          ].forEach(function (v) {
+            var b = document.createElement("button");
+            b.className = "vel-btn" + (rec && v.ppm === siguienteMeta(rec) ? " vel-sugerida" : "");
+            b.innerHTML =
+              '<span class="vel-num">' + v.ppm + '</span>' +
+              '<span class="vel-nom">' + v.nom + '</span>' +
+              '<span class="vel-desc">' + v.desc + '</span>' +
+              (rec && v.ppm === siguienteMeta(rec) ? '<span class="vel-tag">tu próxima meta</span>' : "");
+            b.addEventListener("click", function () {
+              Snd.bloque();
+              cuentaRegresiva(v.ppm);
+            });
+            caja.appendChild(b);
+          });
+          m.cuerpo.appendChild(caja);
+        }
+
+        /* la velocidad justo por encima de su récord: ni aburrida ni imposible */
+        function siguienteMeta(rec) {
+          var escala = [15, 20, 30, 40, 60];
+          for (var i = 0; i < escala.length; i++) {
+            if (escala[i] > rec) return escala[i];
+          }
+          return 60;
+        }
+
+        function cuentaRegresiva(ppm) {
+          m.cuerpo.innerHTML = "";
+          m.pie.innerHTML = "";
+          var c = document.createElement("div");
+          c.className = "cuenta";
+          m.cuerpo.appendChild(c);
+          var n = 3;
+          Voz.decir("Get ready", { rate: 0.9 });
+          (function paso() {
+            if (n === 0) {
+              c.textContent = "GO!";
+              Snd.cuenta(true);
+              setTimeout(function () { correr(ppm); }, 600);
+              return;
+            }
+            c.textContent = n;
+            Snd.cuenta(false);
+            n--;
+            setTimeout(paso, 800);
+          })();
+        }
+
+        function correr(ppm) {
+          var intervalo = 60000 / ppm;
+          var lista = U.mezclar(palabras);
+          var total = Math.min(lista.length, Math.max(10, Math.round(ppm)));
+
+          m.cuerpo.innerHTML = "";
+          m.pie.innerHTML = "";
+
+          var escenario = document.createElement("div");
+          escenario.className = "escenario";
+          escenario.innerHTML =
+            '<div class="ritmo"><div class="ritmo-relleno" id="rr"></div></div>' +
+            '<div class="palabra-viva" id="pv"></div>' +
+            '<div class="estela" id="es"></div>';
+          m.cuerpo.appendChild(escenario);
+
+          var pv = escenario.querySelector("#pv");
+          var rr = escenario.querySelector("#rr");
+          var es = escenario.querySelector("#es");
+
+          var hud = document.createElement("div");
+          hud.className = "carrera-hud";
+          hud.innerHTML = '<span id="hDicho">0</span> / <span id="hTotal">' + total + '</span>' +
+                          '<span class="carrera-ppm">' + ppm + ' ppm</span>';
+          m.top.appendChild(hud);
+          var hDicho = hud.querySelector("#hDicho");
+
+          var mostradas = [];   // { w, color, resuelto, chip }
+          var i = 0, dichas = 0, verdes = 0, gan = 0, corriendo = true;
+          var reloj = null, animRitmo = null;
+
+          /* --- mostrar la próxima palabra --- */
+          function siguiente() {
+            if (!corriendo) return;
+            if (i >= total) return terminar();
+
+            var w = lista[i];
+            var entrada = { w: w, color: null, resuelto: false, chip: null, cuando: Date.now() };
+            mostradas.push(entrada);
+            i++;
+
+            pv.textContent = w.p;
+            pv.className = "palabra-viva entra";
+            void pv.offsetWidth;
+            pv.classList.add("entra");
+            Snd.tic(true);
+
+            // chip en la estela
+            var chip = document.createElement("span");
+            chip.className = "estela-chip";
+            chip.textContent = w.p;
+            es.appendChild(chip);
+            entrada.chip = chip;
+            while (es.children.length > 6) es.removeChild(es.firstChild);
+
+            // barra de ritmo
+            rr.style.transition = "none";
+            rr.style.width = "0%";
+            void rr.offsetWidth;
+            rr.style.transition = "width " + intervalo + "ms linear";
+            rr.style.width = "100%";
+
+            // cerrar la de hace 2 palabras: si no la dijo, es "no dijo", no "mal"
+            var vieja = mostradas[mostradas.length - 3];
+            if (vieja && !vieja.resuelto) cerrar(vieja, "nodijo");
+
+            reloj = setTimeout(siguiente, intervalo);
+          }
+
+          function cerrar(entrada, color) {
+            if (entrada.resuelto) return;
+            entrada.resuelto = true;
+            entrada.color = color;
+            if (entrada.chip) {
+              entrada.chip.classList.add("cerrado", color === "nodijo" ? "chip-nodijo" : "sem-fondo-" + color);
+            }
+            if (color === "nodijo") {
+              Pro.registrarPalabra(entrada.w.p, "rojo", null);
+              return;
+            }
+            dichas++;
+            hDicho.textContent = dichas;
+            Pro.registrarPalabra(entrada.w.p, color, null);
+            if (color === "verde") {
+              verdes++;
+              gan += m.premiar(entrada.chip, "verde", Eco.PAGOS.verde);
+            } else {
+              gan += m.premiar(entrada.chip, "amarillo", Eco.PAGOS.amarillo);
+            }
+          }
+
+          /* --- escuchar sin parar y emparejar con lo que está en pantalla ---
+             El reconocedor devuelve texto con retraso, así que cada palabra
+             que oye se compara contra las últimas 3 que se mostraron y todavía
+             no se resolvieron. Sin esa ventana, todo llegaría tarde y contaría
+             como no dicho.                                                   */
+          var sinMic = false;
+          Voz.escucharCarrera(Math.ceil((total * intervalo) / 1000) + 3, function (texto, esFinal) {
+            if (!corriendo || !esFinal) return;
+            String(texto).toLowerCase().split(/\s+/).filter(Boolean).forEach(function (tk) {
+              for (var k = mostradas.length - 1; k >= Math.max(0, mostradas.length - 3); k--) {
+                var en = mostradas[k];
+                if (en.resuelto) continue;
+                var r = Sem.evaluar(en.w, { alternativas: [{ t: tk, c: null }] });
+                if (r.color !== "rojo") { cerrar(en, r.color); return; }
               }
             });
-          }).then(function () {
-            clearInterval(t);
-            var ppm = Math.round(leidas / (segundos / 60));
-            Pro.registrar(lecturaPalabras.destreza, true,
-              { ms: segundos * 1000, item: "carrera:" + ppm });
-            // récord personal
+          }).then(function (res) {
+            /* Si el reconocimiento no arranca (permiso negado, sin internet,
+               navegador que no lo trae), NO se corta la carrera: el ritmo sirve
+               igual como marcapasos y al final lo marca el adulto. Antes esto
+               terminaba el juego antes de mostrar la primera palabra. */
+            if (res && res.error) { sinMic = true; avisarSinMic(); return; }
+            if (corriendo) terminar();
+          });
+
+          function avisarSinMic() {
+            var a = document.createElement("p");
+            a.className = "aviso-sinmic";
+            a.textContent = "Sin micrófono: seguí el ritmo igual, al final marcás cuáles dijo bien.";
+            escenario.insertBefore(a, escenario.firstChild);
+          }
+
+          function terminar() {
+            if (!corriendo) return;
+            corriendo = false;
+            clearTimeout(reloj);
+            cancelAnimationFrame(animRitmo);
+
+            // sin micrófono, el adulto marca cuáles dijo bien antes de contar
+            if (sinMic) return marcarAMano();
+            mostradas.forEach(function (en) { if (!en.resuelto) cerrar(en, "nodijo"); });
+            contar();
+          }
+
+          /* Marcado manual: es como se toma una prueba de fluidez en la escuela.
+             El adulto toca las que dijo bien y listo. */
+          function marcarAMano() {
+            m.cuerpo.innerHTML = "";
+            m.pie.innerHTML = "";
+            var caja = document.createElement("div");
+            caja.className = "marcar";
+            caja.innerHTML = '<p class="marcar-tit">Tocá las que dijo bien</p>';
+            var grilla = document.createElement("div");
+            grilla.className = "marcar-grilla";
+            mostradas.forEach(function (en) {
+              var b = document.createElement("button");
+              b.className = "marcar-chip";
+              b.textContent = en.w.p;
+              b.addEventListener("click", function () {
+                en.marcada = !en.marcada;
+                b.classList.toggle("si", en.marcada);
+                Snd.tic(en.marcada);
+              });
+              grilla.appendChild(b);
+            });
+            caja.appendChild(grilla);
+            m.cuerpo.appendChild(caja);
+            m.pie.appendChild(ui.boton("Listo", "btn-primario", function () {
+              mostradas.forEach(function (en) {
+                en.resuelto = false;
+                cerrar(en, en.marcada ? "verde" : "nodijo");
+              });
+              contar();
+            }));
+          }
+
+          function contar() {
             var e = N.Almacen.leer();
-            var rec = (e.destrezas["record-ppm"] || {}).mejor || 0;
-            var extra = "Leíste " + leidas + " palabras · " + ppm + " por minuto";
-            if (ppm > rec) {
+            var reg = e.destrezas["record-ppm"] || { mejor: 0 };
+            // solo cuenta como récord si dijo bien al menos el 60% a esa velocidad
+            var logrado = verdes >= Math.ceil(total * 0.6);
+            var nuevoRecord = logrado && ppm > (reg.mejor || 0);
+            if (nuevoRecord) {
               e.destrezas["record-ppm"] = { mejor: ppm, intentos: 1, aciertos: 1, historial: [] };
               N.Almacen.guardar();
               gan += Eco.dar(Eco.PAGOS.recordPersonal, "record");
-              extra += "  ·  ¡NUEVO RÉCORD!";
             }
-            repaso(m, resultados, function () {
-              ui.fin(el, { esmeraldas: gan, aciertos: verdes, total: leidas || 1, extra: extra },
-                function () { fin({ aciertos: verdes, total: leidas, esmeraldas: gan, ppm: ppm }); });
+            Pro.registrar("fluidez-ritmo:" + ppm, logrado,
+              { item: verdes + "/" + total + " a " + ppm + "ppm" });
+
+            if (nuevoRecord) Snd.nivel();
+
+            var extra = "A " + ppm + " palabras por minuto dijiste bien " + verdes +
+                        " de " + total +
+                        (nuevoRecord ? "  ·  ¡NUEVO RÉCORD!" :
+                         logrado ? "  ·  ¡Lograste esta velocidad!" :
+                                   "  ·  Probá una velocidad más lenta");
+
+            var resultados = mostradas.map(function (en) {
+              return { w: en.w, r: { color: en.color === "nodijo" ? "rojo" : en.color,
+                                     razon: en.color === "nodijo" ? "No llegó a decirla" : "",
+                                     oido: "" }, ms: 0 };
             });
-          });
+
+            repaso(m, resultados, function () {
+              ui.fin(el, { esmeraldas: gan, aciertos: verdes, total: total, extra: extra },
+                function () { fin({ aciertos: verdes, total: total, esmeraldas: gan, ppm: ppm }); });
+            });
+          }
+
+          setTimeout(siguiente, 400);
         }
       }
 
@@ -413,7 +715,7 @@
       var palabras = (cfg.items || []).slice(0, cfg.cuantas || 6);
       var lado = cfg.lado || (palabras.length > 5 ? 10 : 8);
       var diagonales = !!cfg.diagonales;
-      var m = ui.marco(el, "Word Search", "Encontrá las palabras");
+      var m = ui.marco(el, "Word Search", "Encontrá las palabras", palabras.length);
 
       var rejilla = generar(palabras.map(function (w) { return w.p.toUpperCase(); }), lado, diagonales);
       var encontradas = {}, gan = 0, t0 = Date.now();
@@ -494,7 +796,7 @@
           var chip = listaEl.querySelector('[data-w="' + W + '"]');
           if (chip) chip.classList.add("hallada");
           Voz.decir(hit.p, { rate: 0.7 });
-          gan += Eco.dar(Eco.PAGOS.acierto, "sopa");
+          gan += m.premiar(chip || tabla, "verde");
           Pro.registrar(sopaLetras.destreza, true, { item: hit.p });
           Pro.registrarPalabra(hit.p, "verde", null);
           sel = [];
@@ -579,7 +881,7 @@
 
     iniciar: function (el, cfg, fin) {
       var palabras = cfg.items || [];
-      var m = ui.marco(el, "Spelling", "Escuchá la palabra y armala");
+      var m = ui.marco(el, "Spelling", "Escuchá la palabra y armala", palabras.length);
       var i = 0, aciertos = 0, gan = 0, resultados = [];
 
       function pintar() {
@@ -661,7 +963,7 @@
           resultados.push({ w: w, color: color, escrito: texto, ayudas: ayudas });
           Pro.registrar(spelling.destreza, color === "verde", { item: w.p, semaforo: color });
           Pro.registrarPalabra(w.p, color, null);
-          gan += Eco.dar(Eco.PAGOS[color] || 0, "spelling");
+          gan += m.premiar(huecos, color, Eco.PAGOS[color]);
           if (color === "verde") aciertos++;
 
           var hs = huecos.querySelectorAll(".spell-hueco");
@@ -713,7 +1015,7 @@
 
     iniciar: function (el, cfg, fin) {
       var c = cfg.cuento || D.CUENTOS[0];
-      var m = ui.marco(el, c.titulo, "Leé el cuento");
+      var m = ui.marco(el, c.titulo, "Leé el cuento", c.preguntas.length);
       var escena = 0, gan = 0;
 
       function pintarEscena() {
@@ -784,7 +1086,7 @@
                   if (oo.k === pg.r) ops.children[n].classList.add("ok");
                 });
               }
-              if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "challenger"); }
+              if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
               Pro.registrar(cuento.destreza + ":" + pg.tipo, ok, { item: c.id + ":" + q });
               Voz.decir(ok ? "Correct!" : "Not quite.", { rate: 0.9 });
               m.pie.innerHTML = "";
@@ -818,7 +1120,7 @@
     iniciar: function (el, cfg, fin) {
       var lista = cfg.items || generarSet(cfg.cuantas || 8, cfg.max || 20);
       var pedirEstrategia = cfg.estrategia !== false;
-      var m = ui.marco(el, "Math Facts", "Resolvé la ecuación");
+      var m = ui.marco(el, "Math Facts", "Resolvé la ecuación", lista.length);
       var i = 0, aciertos = 0, gan = 0, t0;
 
       function generarSet(n, max) {
@@ -901,7 +1203,7 @@
             if (+x.textContent === correcta) x.classList.add("ok");
           });
         }
-        if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "mate"); }
+        if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
         Pro.registrar(operaciones.destreza, ok, { ms: ms, item: e.txt });
         Pro.registrar(operaciones.destreza + ":hueco-" + e.hueco, ok, { item: e.txt });
 
@@ -967,7 +1269,7 @@
 
     iniciar: function (el, cfg, fin) {
       var lista = cfg.items || U.tomar(D.PROBLEMAS, cfg.cuantas || 4);
-      var m = ui.marco(el, "Word Problems", "Leé y resolvé paso a paso");
+      var m = ui.marco(el, "Word Problems", "Leé y resolvé paso a paso", lista.length);
       var i = 0, aciertos = 0, gan = 0;
 
       function pintar() {
@@ -1070,7 +1372,7 @@
               var ok = v === p.r;
               cont.querySelectorAll(".opcion-num").forEach(function (x) { x.disabled = true; });
               b.classList.add(ok ? "ok" : "mal");
-              if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "problema"); }
+              if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
               Pro.registrar("problemas:calculo", ok, { item: p.id });
               Pro.registrar(problemas.destreza, ok,
                 { item: p.id + (usoTraduccion ? ":conTraduccion" : "") });
@@ -1144,8 +1446,12 @@
             var ok = o.id === c.id;
             cont.querySelectorAll("button").forEach(function (x) { x.disabled = true; });
             b.classList.add(ok ? "ok" : "mal");
-            if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "dinero"); }
-            else Voz.decir("A " + c.nombre + " is " + c.es.replace("centavos", "cents"), { rate: 0.8 });
+            if (ok) {
+              aciertos++; gan += m.premiar(b, "verde");
+            } else {
+              m.premiar(b, "rojo");
+              Voz.decir("A " + c.nombre + " is " + c.es.replace("centavos", "cents"), { rate: 0.8 });
+            }
             Pro.registrar(monedas.destreza + ":identificar", ok, { item: c.id });
             siguiente();
           });
@@ -1185,7 +1491,7 @@
             var ok = v === total;
             cont.querySelectorAll("button").forEach(function (x) { x.disabled = true; });
             b.classList.add(ok ? "ok" : "mal");
-            if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "dinero"); }
+            if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
             Pro.registrar(monedas.destreza + ":contar", ok, { item: "total:" + total });
             siguiente();
           });
@@ -1221,7 +1527,7 @@
             var ok = v === vuelto;
             cont.querySelectorAll("button").forEach(function (x) { x.disabled = true; });
             b.classList.add(ok ? "ok" : "mal");
-            if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "dinero"); }
+            if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
             Pro.registrar(monedas.destreza + ":vuelto", ok, { item: art.p });
             siguiente();
           });
@@ -1255,7 +1561,7 @@
     iniciar: function (el, cfg, fin) {
       var g = cfg.grafica || U.azar(D.GRAFICAS);
       var cuantas = cfg.cuantas || 5;
-      var m = ui.marco(el, "Graphs", g.titulo);
+      var m = ui.marco(el, "Graphs", g.titulo, cuantas);
       var i = 0, aciertos = 0, gan = 0;
       var preguntas = armarPreguntas(g, cuantas);
 
@@ -1325,7 +1631,7 @@
                 if (x.textContent === String(q.r)) x.classList.add("ok");
               });
             }
-            if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "grafica"); }
+            if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
             Pro.registrar(graficas.destreza + ":" + q.tipo, ok, { item: g.id });
             m.pie.appendChild(ui.boton("Next", "btn-primario", function () { i++; pintar(); }));
           });
@@ -1355,7 +1661,7 @@
 
     iniciar: function (el, cfg, fin) {
       var rondas = cfg.rondas || 6;
-      var m = ui.marco(el, "Shapes", "Reconocé la forma");
+      var m = ui.marco(el, "Shapes", "Reconocé la forma", rondas);
       var i = 0, aciertos = 0, gan = 0;
 
       function pintar() {
@@ -1408,7 +1714,7 @@
               });
               Voz.decir("This is a " + f.en, { rate: 0.8 });
             }
-            if (ok) { aciertos++; gan += Eco.dar(Eco.PAGOS.acierto, "geometria"); }
+            if (ok) { aciertos++; gan += m.premiar(b, "verde"); } else { m.premiar(b, "rojo"); }
             Pro.registrar(formas.destreza + ":" + modo, ok, { item: f.id });
             m.pie.appendChild(ui.boton("Next", "btn-primario", function () { i++; pintar(); }));
           });

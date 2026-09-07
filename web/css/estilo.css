@@ -667,3 +667,170 @@ button, input { font-family: inherit; font-size: inherit; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ============================================================================
+   EFECTOS DE JUEGO — partículas, racha, compañero, pista y modo a ritmo
+   ========================================================================== */
+
+.capa-particulas {
+  position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden;
+}
+.particula {
+  position: absolute; width: 11px; height: 11px; margin: -5px 0 0 -5px;
+  clip-path: polygon(50% 0%, 100% 40%, 50% 100%, 0% 40%);
+  transition: transform .68s cubic-bezier(.15,.7,.35,1), opacity .68s ease-out;
+  will-change: transform, opacity;
+}
+.flotante {
+  position: absolute; transform: translate(-50%, 0);
+  font-family: var(--f-pixel); font-size: 19px; color: var(--esmeralda);
+  text-shadow: 0 2px 0 rgba(0,0,0,.5); white-space: nowrap;
+  transition: transform .85s cubic-bezier(.2,.8,.3,1), opacity .85s ease-out;
+  will-change: transform, opacity;
+}
+@keyframes sacudida {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); } 40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); } 80% { transform: translateX(3px); }
+}
+.sacude { animation: sacudida .38s ease; }
+
+/* --- compañero y racha en el encabezado --- */
+.juego-top { align-items: center; }
+.compa-caja { line-height: 0; flex: none; }
+.juego-tit-caja { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.compa { transition: transform .2s ease; }
+.compa-feliz, .compa-fiesta { animation: brinco .45s ease; }
+@keyframes brinco {
+  0%,100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-9px) scale(1.08); }
+}
+.compa-ups { animation: hundir .45s ease; }
+@keyframes hundir {
+  0%,100% { transform: translateY(0) scaleY(1); }
+  45% { transform: translateY(4px) scaleY(.88); }
+}
+.racha {
+  font-family: var(--f-pixel); font-size: 12px; color: var(--antorcha);
+  background: rgba(255,176,58,.14); border: 2px solid var(--antorcha);
+  border-radius: 999px; padding: 5px 10px; white-space: nowrap; flex: none;
+}
+.racha.late { animation: late .4s ease; }
+@keyframes late {
+  0%,100% { transform: scale(1); } 45% { transform: scale(1.22); }
+}
+
+/* --- pista de bloques: cuánto falta para terminar el nivel --- */
+.pista { display: flex; gap: 4px; width: 100%; }
+.pista-bloque {
+  flex: 1; height: 9px; border-radius: 3px;
+  background: var(--piedra-2); border: 1px solid var(--linea);
+  transition: background .25s ease, transform .25s ease;
+}
+.pista-bloque.hecho { transform: scaleY(1.5); border-color: transparent; }
+
+/* --- elegir velocidad --- */
+.vel-cab { text-align: center; }
+.vel-tit { font-family: var(--f-pixel); font-size: 17px; margin: 0 0 6px; }
+.vel-sub { color: var(--suave); font-size: 15px; margin: 0 auto; max-width: 34ch; }
+.vel-rec { color: var(--antorcha); font-size: 14px; margin: 8px 0 0; }
+.vel-opciones {
+  display: grid; gap: 10px; width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.vel-btn {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 16px 12px; cursor: pointer;
+  background: var(--piedra); border: 3px solid var(--linea);
+  border-radius: 14px; color: var(--texto);
+}
+.vel-btn:active { transform: translateY(2px); }
+.vel-sugerida { border-color: var(--esmeralda); }
+.vel-num { font-family: var(--f-pixel); font-size: 28px; color: var(--esmeralda); }
+.vel-nom { font-family: var(--f-lectura); font-weight: 700; font-size: 16px; }
+.vel-desc { font-size: 12px; color: var(--suave); }
+.vel-tag {
+  font-family: var(--f-pixel); font-size: 8px; letter-spacing: .06em;
+  color: #0d1a14; background: var(--esmeralda);
+  border-radius: 4px; padding: 3px 6px; margin-top: 5px;
+}
+
+/* --- cuenta regresiva --- */
+.cuenta {
+  font-family: var(--f-pixel); font-size: clamp(64px, 22vw, 120px);
+  color: var(--esmeralda); text-align: center; padding: 40px 0;
+  animation: latir .8s ease infinite;
+}
+@keyframes latir {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12); opacity: .75; }
+}
+
+/* --- pista a ritmo --- */
+.escenario { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.ritmo {
+  height: 10px; background: var(--piedra-2);
+  border: 2px solid var(--linea); border-radius: 999px; overflow: hidden;
+}
+.ritmo-relleno { height: 100%; background: var(--antorcha); width: 0; }
+.palabra-viva {
+  font-family: var(--f-lectura); font-weight: 700;
+  font-size: clamp(52px, 17vw, 96px); letter-spacing: .03em;
+  text-align: center; line-height: 1.15; padding: 30px 16px;
+  background: var(--piedra); border: 3px solid var(--diamante);
+  border-radius: 16px; min-height: 1.6em;
+}
+.palabra-viva.entra { animation: aparecer .22s cubic-bezier(.2,1.4,.4,1); }
+@keyframes aparecer {
+  0% { transform: scale(.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.estela { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; min-height: 34px; }
+.estela-chip {
+  font-family: var(--f-lectura); font-size: 15px; padding: 5px 11px;
+  border-radius: 999px; background: var(--piedra);
+  border: 2px solid var(--linea); color: var(--suave);
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
+}
+.estela-chip.cerrado { color: #10141f; border-color: transparent; font-weight: 700; }
+.estela-chip.chip-nodijo {
+  background: transparent; color: var(--suave);
+  border-color: var(--linea); border-style: dashed; font-weight: 400;
+}
+.carrera-hud {
+  font-family: var(--f-pixel); font-size: 15px; color: var(--texto);
+  background: var(--piedra); border: 2px solid var(--linea);
+  border-radius: var(--r); padding: 5px 11px;
+  display: flex; gap: 10px; align-items: center; margin-left: auto;
+}
+.carrera-ppm { font-size: 10px; color: var(--suave); }
+
+/* --- cierre de nivel --- */
+.fin-estrellas {
+  font-size: 40px; letter-spacing: .1em; color: var(--antorcha);
+  animation: brinco .6s ease;
+}
+.fin-racha { color: var(--antorcha); font-size: 15px; margin: 0; }
+.fin-compa { line-height: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .particula, .flotante { display: none; }
+}
+
+.aviso-sinmic {
+  margin: 0; padding: 10px 12px; font-size: 14px; text-align: center;
+  background: rgba(255,176,58,.12); border: 2px dashed var(--antorcha);
+  border-radius: var(--r); color: var(--antorcha);
+}
+.marcar { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.marcar-tit { font-family: var(--f-pixel); font-size: 13px; margin: 0; text-align: center; }
+.marcar-grilla { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.marcar-chip {
+  font-family: var(--f-lectura); font-weight: 700; font-size: 18px;
+  padding: 11px 15px; min-height: 48px; cursor: pointer;
+  background: var(--piedra); color: var(--texto);
+  border: 2px solid var(--linea); border-radius: 999px;
+}
+.marcar-chip.si {
+  background: var(--verde); color: #0d1a14; border-color: #23b881;
+}
