@@ -834,3 +834,43 @@ button, input { font-family: inherit; font-size: inherit; }
 .marcar-chip.si {
   background: var(--verde); color: #0d1a14; border-color: #23b881;
 }
+
+/* --- selector de velocidad: escribir el número o moverlo con + y − --- */
+.vel-panel { width: 100%; display: flex; flex-direction: column; gap: 14px; align-items: center; }
+.vel-dial {
+  display: flex; align-items: stretch; gap: 12px; width: 100%;
+  max-width: 420px; justify-content: center;
+}
+.vel-paso {
+  width: 68px; flex: none; font-size: 34px; line-height: 1;
+  background: var(--piedra); color: var(--esmeralda);
+  border: 3px solid var(--linea); border-bottom-width: 5px;
+  border-radius: 14px; cursor: pointer;
+}
+.vel-paso:active { transform: translateY(2px); border-bottom-width: 3px; }
+.vel-centro {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: var(--piedra); border: 3px solid var(--esmeralda);
+  border-radius: 14px; padding: 12px 8px;
+}
+.vel-input {
+  width: 100%; text-align: center; background: none; border: none; color: var(--esmeralda);
+  font-family: var(--f-pixel); font-size: clamp(38px, 12vw, 56px); padding: 0;
+  -moz-appearance: textfield;
+}
+.vel-input:focus { outline: none; }
+.vel-input::-webkit-outer-spin-button,
+.vel-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.vel-unidad { font-size: 12px; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; }
+.vel-cada { font-family: var(--f-lectura); font-size: 15px; color: var(--texto); }
+.vel-chips { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; }
+.vel-chip {
+  font-family: var(--f-pixel); font-size: 13px; min-width: 50px; min-height: 44px;
+  padding: 8px 10px; cursor: pointer;
+  background: var(--piedra); color: var(--suave);
+  border: 2px solid var(--linea); border-radius: 10px;
+}
+.vel-chip.sel { border-color: var(--esmeralda); color: var(--esmeralda); }
+.vel-ref {
+  font-size: 12.5px; color: var(--suave); margin: 0; max-width: 44ch; text-align: center;
+}

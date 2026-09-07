@@ -224,6 +224,8 @@
      1 · LECTURA DE PALABRAS  (micrófono, semáforo, palabras por minuto)
      ======================================================================== */
 
+  var MIN_PPM = 5, MAX_PPM = 200;
+
   var lecturaPalabras = {
     id: "lectura-palabras",
     nombre: "Word Reading",
@@ -388,51 +390,98 @@
         function elegirVelocidad() {
           var e = N.Almacen.leer();
           var rec = (e.destrezas["record-ppm"] || {}).mejor || 0;
+          var elegida = (e.ajustes && e.ajustes.ultimaPpm) || (rec ? siguienteMeta(rec) : 20);
+
           m.cuerpo.innerHTML = "";
           m.pie.innerHTML = "";
 
-          var cab = document.createElement("div");
-          cab.className = "vel-cab";
-          cab.innerHTML =
+          var caja = document.createElement("div");
+          caja.className = "vel-panel";
+          caja.innerHTML =
             '<h3 class="vel-tit">¿A qué velocidad?</h3>' +
             '<p class="vel-sub">Las palabras van a ir apareciendo solas. ' +
             'Decilas en voz alta apenas las veas.</p>' +
-            (rec ? '<p class="vel-rec">Tu récord: <b>' + rec + '</b> palabras por minuto</p>' : "");
-          m.cuerpo.appendChild(cab);
 
-          var caja = document.createElement("div");
-          caja.className = "vel-opciones";
+            '<div class="vel-dial">' +
+              '<button class="vel-paso" id="menos" aria-label="Más lento">−</button>' +
+              '<div class="vel-centro">' +
+                '<input class="vel-input" id="ppm" type="number" inputmode="numeric" ' +
+                  'min="' + MIN_PPM + '" max="' + MAX_PPM + '" step="1" value="' + elegida + '" ' +
+                  'aria-label="Palabras por minuto">' +
+                '<span class="vel-unidad">palabras por minuto</span>' +
+                '<span class="vel-cada" id="cada"></span>' +
+              '</div>' +
+              '<button class="vel-paso" id="mas" aria-label="Más rápido">+</button>' +
+            '</div>' +
 
-          [
-            { ppm: 15, nom: "Muy lento", desc: "1 cada 4 segundos" },
-            { ppm: 20, nom: "Lento",     desc: "1 cada 3 segundos" },
-            { ppm: 30, nom: "Normal",    desc: "1 cada 2 segundos" },
-            { ppm: 40, nom: "Rápido",    desc: "1 cada 1.5 segundos" },
-            { ppm: 60, nom: "Muy rápido", desc: "1 por segundo" }
-          ].forEach(function (v) {
-            var b = document.createElement("button");
-            b.className = "vel-btn" + (rec && v.ppm === siguienteMeta(rec) ? " vel-sugerida" : "");
-            b.innerHTML =
-              '<span class="vel-num">' + v.ppm + '</span>' +
-              '<span class="vel-nom">' + v.nom + '</span>' +
-              '<span class="vel-desc">' + v.desc + '</span>' +
-              (rec && v.ppm === siguienteMeta(rec) ? '<span class="vel-tag">tu próxima meta</span>' : "");
-            b.addEventListener("click", function () {
-              Snd.bloque();
-              cuentaRegresiva(v.ppm);
-            });
-            caja.appendChild(b);
-          });
+            '<div class="vel-chips" id="chips"></div>' +
+            (rec ? '<p class="vel-rec">Tu récord: <b>' + rec + '</b> ppm</p>' : "") +
+            '<p class="vel-ref">Estas son palabras sueltas e inventadas, no un texto ' +
+            'seguido: el número no se compara con los promedios de fluidez de la ' +
+            'escuela, que se miden leyendo cuentos.</p>';
           m.cuerpo.appendChild(caja);
+
+          var inp = caja.querySelector("#ppm");
+          var cada = caja.querySelector("#cada");
+
+          function limpiar(v) {
+            v = parseInt(v, 10);
+            if (!v || v < MIN_PPM) v = MIN_PPM;
+            if (v > MAX_PPM) v = MAX_PPM;
+            return v;
+          }
+          function refrescar() {
+            var v = limpiar(inp.value);
+            var seg = 60 / v;
+            cada.textContent = "1 cada " + (seg >= 1 ? seg.toFixed(seg < 10 ? 1 : 0) + " segundos"
+                                                     : Math.round(seg * 1000) + " ms");
+            caja.querySelectorAll(".vel-chip").forEach(function (c) {
+              c.classList.toggle("sel", +c.dataset.v === v);
+            });
+          }
+          function poner(v) { inp.value = limpiar(v); refrescar(); }
+
+          caja.querySelector("#menos").addEventListener("click", function () {
+            poner(limpiar(inp.value) - paso(limpiar(inp.value))); Snd.tic(false);
+          });
+          caja.querySelector("#mas").addEventListener("click", function () {
+            poner(limpiar(inp.value) + paso(limpiar(inp.value))); Snd.tic(true);
+          });
+          inp.addEventListener("input", refrescar);
+          inp.addEventListener("blur", function () { poner(inp.value); });
+
+          /* el paso crece con el número: abajo se ajusta fino, arriba de a 10 */
+          function paso(v) { return v < 30 ? 1 : v < 60 ? 5 : 10; }
+
+          var chips = caja.querySelector("#chips");
+          [10, 15, 20, 30, 40, 60, 90, 120, 150, 200].forEach(function (v) {
+            var c = document.createElement("button");
+            c.className = "vel-chip";
+            c.dataset.v = v;
+            c.textContent = v;
+            c.addEventListener("click", function () { poner(v); Snd.tic(true); });
+            chips.appendChild(c);
+          });
+
+          m.pie.appendChild(ui.boton("▶ GO", "btn-primario btn-grande", function () {
+            var v = limpiar(inp.value);
+            var e2 = N.Almacen.leer();
+            e2.ajustes.ultimaPpm = v;
+            N.Almacen.guardar();
+            Snd.bloque();
+            cuentaRegresiva(v);
+          }));
+
+          refrescar();
         }
 
         /* la velocidad justo por encima de su récord: ni aburrida ni imposible */
         function siguienteMeta(rec) {
-          var escala = [15, 20, 30, 40, 60];
+          var escala = [10, 15, 20, 30, 40, 60, 90, 120, 150, 200];
           for (var i = 0; i < escala.length; i++) {
             if (escala[i] > rec) return escala[i];
           }
-          return 60;
+          return MAX_PPM;
         }
 
         function cuentaRegresiva(ppm) {
@@ -459,8 +508,15 @@
 
         function correr(ppm) {
           var intervalo = 60000 / ppm;
+          // el reconocimiento llega con ~1,5 s de atraso: cuantas palabras
+          // entran en ese tiempo es cuantas hay que seguir mirando hacia atras
+          var VENTANA = Math.max(3, Math.min(10, Math.ceil(1500 / intervalo)));
           var lista = U.mezclar(palabras);
-          var total = Math.min(lista.length, Math.max(10, Math.round(ppm)));
+          // la tanda dura mas o menos lo mismo a cualquier velocidad (~30 s),
+          // asi 200 ppm no se termina en cinco segundos
+          var SEGUNDOS_TANDA = 30;
+          var total = Math.min(lista.length,
+                               Math.max(8, Math.round(ppm * SEGUNDOS_TANDA / 60)));
 
           m.cuerpo.innerHTML = "";
           m.pie.innerHTML = "";
@@ -520,7 +576,7 @@
             rr.style.width = "100%";
 
             // cerrar la de hace 2 palabras: si no la dijo, es "no dijo", no "mal"
-            var vieja = mostradas[mostradas.length - 3];
+            var vieja = mostradas[mostradas.length - (VENTANA + 1)];
             if (vieja && !vieja.resuelto) cerrar(vieja, "nodijo");
 
             reloj = setTimeout(siguiente, intervalo);
@@ -557,7 +613,7 @@
           Voz.escucharCarrera(Math.ceil((total * intervalo) / 1000) + 3, function (texto, esFinal) {
             if (!corriendo || !esFinal) return;
             String(texto).toLowerCase().split(/\s+/).filter(Boolean).forEach(function (tk) {
-              for (var k = mostradas.length - 1; k >= Math.max(0, mostradas.length - 3); k--) {
+              for (var k = mostradas.length - 1; k >= Math.max(0, mostradas.length - VENTANA); k--) {
                 var en = mostradas[k];
                 if (en.resuelto) continue;
                 var r = Sem.evaluar(en.w, { alternativas: [{ t: tk, c: null }] });

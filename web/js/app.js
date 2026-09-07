@@ -440,7 +440,10 @@
         id: "carrera", tit: "Speed Run", sub: "60 segundos · superá tu récord",
         etiqueta: (e.destrezas["record-ppm"] ? "Récord: " + e.destrezas["record-ppm"].mejor + " ppm" : "Nuevo"),
         juego: "lecturaPalabras",
-        cfg: { items: U.tomar(D.NONSENSE.cvce, 40), modo: "carrera", segundos: 60 }
+        cfg: function () {
+          // hasta 200 ppm por 30 s hacen falta ~100 palabras en la bolsa
+          return { items: U.tomar(D.NONSENSE.cvce.concat(D.NONSENSE.cvc), 120), modo: "carrera" };
+        }
       });
       lista.push({
         id: "sopa", tit: "Word Search", sub: "Encontrá las palabras",
