@@ -184,28 +184,70 @@
     function repintar() { vista.innerHTML = N.Avatar.svg(a, 120); }
     repintar();
 
+    /* Piel y ojos siempre libres: eso es quién es él, no un premio.
+       Pelo, ropa y sombreros se desbloquean con esmeraldas — le dan algo que
+       comprar YA, sin tener que esperar a que papá apruebe un canje. */
+    var LIBRES = { piel: 99, ojos: 99, pelo: 3, ropa: 3, sombrero: 2 };
+    var PRECIO = { pelo: 30, ropa: 30, sombrero: 60 };
+
+    function desbloqueados(cual) {
+      var e2 = Alm.leer();
+      e2.desbloqueado = e2.desbloqueado || {};
+      return e2.desbloqueado[cual] || [];
+    }
+    function tiene(cual, i) {
+      return i < LIBRES[cual] || desbloqueados(cual).indexOf(i) >= 0;
+    }
+    function comprar(cual, i, alHacer) {
+      var precio = PRECIO[cual];
+      if (!confirm("¿Desbloquear esto por " + precio + " esmeraldas?\n\nTenés " +
+                   Eco.total() + ".")) return;
+      if (!Eco.gastar(precio)) {
+        alert("Te faltan " + (precio - Eco.total()) + " esmeraldas. ¡Seguí jugando!");
+        return;
+      }
+      var e2 = Alm.leer();
+      e2.desbloqueado = e2.desbloqueado || {};
+      e2.desbloqueado[cual] = (e2.desbloqueado[cual] || []).concat([i]);
+      Alm.guardar();
+      global.EFECTOS.Sonido.nivel();
+      alHacer();
+    }
+
     [["piel", "Skin", N.Avatar.piel],
      ["pelo", "Hair", N.Avatar.pelo],
      ["ojos", "Eyes", N.Avatar.ojos],
      ["ropa", "Shirt", N.Avatar.ropa]].forEach(function (par) {
+      var cual = par[0];
       var fila = document.createElement("div");
       fila.className = "opt-fila";
       fila.innerHTML = '<span class="opt-et">' + par[1] + '</span>';
       var caja = document.createElement("div");
       caja.className = "opt-colores";
-      par[2].forEach(function (c, i) {
-        var b = document.createElement("button");
-        b.className = "swatch" + (a[par[0]] === i ? " sel" : "");
-        b.style.background = c;
-        b.setAttribute("aria-label", par[1] + " " + (i + 1));
-        b.addEventListener("click", function () {
-          a[par[0]] = i;
-          caja.querySelectorAll(".swatch").forEach(function (x) { x.classList.remove("sel"); });
-          b.classList.add("sel");
-          repintar();
+
+      function pintarCaja() {
+        caja.innerHTML = "";
+        par[2].forEach(function (c, i) {
+          var libre = tiene(cual, i);
+          var b = document.createElement("button");
+          b.className = "swatch" + (a[cual] === i ? " sel" : "") + (libre ? "" : " trabado");
+          b.style.background = c;
+          b.setAttribute("aria-label", par[1] + " " + (i + 1) + (libre ? "" : " · bloqueado"));
+          if (!libre) b.innerHTML = '<span class="candado">' + PRECIO[cual] + '</span>';
+          b.addEventListener("click", function () {
+            if (!tiene(cual, i)) return comprar(cual, i, function () {
+              a[cual] = i; pintarCaja(); repintar();
+            });
+            a[cual] = i;
+            caja.querySelectorAll(".swatch").forEach(function (x) { x.classList.remove("sel"); });
+            b.classList.add("sel");
+            global.EFECTOS.Sonido.tic(true);
+            repintar();
+          });
+          caja.appendChild(b);
         });
-        caja.appendChild(b);
-      });
+      }
+      pintarCaja();
       fila.appendChild(caja);
       opts.appendChild(fila);
     });
@@ -216,18 +258,28 @@
     filaS.innerHTML = '<span class="opt-et">Hat</span>';
     var cajaS = document.createElement("div");
     cajaS.className = "opt-colores";
-    N.Avatar.sombrero.forEach(function (s, i) {
-      var b = document.createElement("button");
-      b.className = "pastilla" + (a.sombrero === i ? " sel" : "");
-      b.textContent = s === "ninguno" ? "—" : s;
-      b.addEventListener("click", function () {
-        a.sombrero = i;
-        cajaS.querySelectorAll(".pastilla").forEach(function (x) { x.classList.remove("sel"); });
-        b.classList.add("sel");
-        repintar();
+    function pintarSombreros() {
+      cajaS.innerHTML = "";
+      N.Avatar.sombrero.forEach(function (s, i) {
+        var libre = tiene("sombrero", i);
+        var b = document.createElement("button");
+        b.className = "pastilla" + (a.sombrero === i ? " sel" : "") + (libre ? "" : " trabado");
+        b.textContent = s === "ninguno" ? "—" : s;
+        if (!libre) b.innerHTML += ' <span class="candado">' + PRECIO.sombrero + '</span>';
+        b.addEventListener("click", function () {
+          if (!tiene("sombrero", i)) return comprar("sombrero", i, function () {
+            a.sombrero = i; pintarSombreros(); repintar();
+          });
+          a.sombrero = i;
+          cajaS.querySelectorAll(".pastilla").forEach(function (x) { x.classList.remove("sel"); });
+          b.classList.add("sel");
+          global.EFECTOS.Sonido.tic(true);
+          repintar();
+        });
+        cajaS.appendChild(b);
       });
-      cajaS.appendChild(b);
-    });
+    }
+    pintarSombreros();
     filaS.appendChild(cajaS);
     opts.appendChild(filaS);
 
@@ -355,6 +407,221 @@
   }
 
   /* ==========================================================================
+     RETOS DEL DÍA
+     Tres misiones que cambian cada día. Existen por una razón concreta: una
+     lista de niveles siempre disponibles no da ningún motivo para abrir el
+     juego HOY. Un reto que vence esta noche, sí.
+     El progreso se calcula del historial que ya se guarda, no de contadores
+     aparte — así nunca se desincroniza de lo que realmente hizo.
+     ======================================================================== */
+
+  var Retos = (function () {
+
+    var CATALOGO = [
+      { id: "verde10", icono: "🟢", meta: 10, pago: 20,
+        tit: "10 palabras en verde",
+        sub: "Leelas o escribilas bien a la primera",
+        cuenta: function (e) { return semaforosHoy(e, "verde"); } },
+
+      { id: "spell5", icono: "✏️", meta: 5, pago: 25,
+        tit: "Escribí 5 palabras",
+        sub: "En Spelling, sin usar la ayuda",
+        cuenta: function (e) { return semaforosHoy(e, "verde", "encoding"); } },
+
+      { id: "math15", icono: "🔢", meta: 15, pago: 20,
+        tit: "15 aciertos en Math",
+        sub: "En cualquier juego del mundo azul",
+        cuenta: function (e) { return aciertosHoyMundo(e, "math"); } },
+
+      { id: "niveles3", icono: "🏁", meta: 3, pago: 25,
+        tit: "Terminá 3 niveles",
+        sub: "Los que quieras, de los dos mundos",
+        cuenta: function (e) { return sesionesHoy(e).length; } },
+
+      { id: "cuento1", icono: "📖", meta: 1, pago: 20,
+        tit: "Leé un cuento entero",
+        sub: "Con la ronda Challenger al final",
+        cuenta: function (e) {
+          return sesionesHoy(e).filter(function (s) {
+            return String(s.nivel).indexOf("cuento") === 0;
+          }).length;
+        } },
+
+      { id: "carrera1", icono: "⚡", meta: 1, pago: 30,
+        tit: "Corré un Speed Run",
+        sub: "A la velocidad que quieras",
+        cuenta: function (e) {
+          return sesionesHoy(e).filter(function (s) { return s.nivel === "carrera"; }).length;
+        } },
+
+      { id: "sopa1", icono: "🔎", meta: 1, pago: 20,
+        tit: "Ganá una sopa de letras",
+        sub: "Encontrá todas las palabras",
+        cuenta: function (e) {
+          return sesionesHoy(e).filter(function (s) {
+            return s.nivel === "sopa" && s.aciertos === s.total;
+          }).length;
+        } },
+
+      { id: "esm50", icono: "💚", meta: 50, pago: 20,
+        tit: "Ganá 50 esmeraldas",
+        sub: "Sumando de todos los niveles de hoy",
+        cuenta: function (e) {
+          return sesionesHoy(e).reduce(function (s, x) { return s + (x.esmeraldas || 0); }, 0);
+        } }
+    ];
+
+    function hoy() { return U.hoy(); }
+
+    function sesionesHoy(e) {
+      var h = hoy();
+      return (e.sesiones || []).filter(function (s) {
+        return new Date(s.t).toISOString().slice(0, 10) === h;
+      });
+    }
+
+    function aciertosHoyMundo(e, mundo) {
+      return sesionesHoy(e).filter(function (s) { return s.mundo === mundo; })
+        .reduce(function (n, s) { return n + (s.aciertos || 0); }, 0);
+    }
+
+    function semaforosHoy(e, color, destrezaSolo) {
+      var h = hoy(), n = 0;
+      Object.keys(e.destrezas || {}).forEach(function (k) {
+        if (destrezaSolo && k.indexOf(destrezaSolo) !== 0) return;
+        (e.destrezas[k].historial || []).forEach(function (x) {
+          if (x.semaforo === color &&
+              new Date(x.t).toISOString().slice(0, 10) === h) n++;
+        });
+      });
+      return n;
+    }
+
+    /* Los tres del día salen de la fecha, no del azar: así no cambian al
+       recargar, y no se puede rerollear hasta que salga uno fácil. */
+    function delDia() {
+      var f = hoy();
+      var semilla = 0;
+      for (var i = 0; i < f.length; i++) semilla = (semilla * 31 + f.charCodeAt(i)) >>> 0;
+      var bolsa = CATALOGO.slice(), elegidos = [];
+      for (var k = 0; k < 3 && bolsa.length; k++) {
+        semilla = (semilla * 1103515245 + 12345) >>> 0;
+        elegidos.push(bolsa.splice(semilla % bolsa.length, 1)[0]);
+      }
+      return elegidos;
+    }
+
+    function estado() {
+      var e = Alm.leer();
+      if (!e.retos || e.retos.fecha !== hoy()) {
+        e.retos = { fecha: hoy(), cobrados: [], cofre: false };
+        Alm.guardar();
+      }
+      return delDia().map(function (r) {
+        var hecho = Math.min(r.cuenta(e), r.meta);
+        return {
+          def: r,
+          hecho: hecho,
+          completo: hecho >= r.meta,
+          cobrado: e.retos.cobrados.indexOf(r.id) >= 0
+        };
+      });
+    }
+
+    function cobrar(id) {
+      var e = Alm.leer();
+      if (e.retos.cobrados.indexOf(id) >= 0) return 0;
+      var r = CATALOGO.filter(function (x) { return x.id === id; })[0];
+      if (!r || r.cuenta(e) < r.meta) return 0;
+      e.retos.cobrados.push(id);
+      Alm.guardar();
+      Eco.dar(r.pago, "reto");
+      return r.pago;
+    }
+
+    function cofreListo() {
+      var st = estado();
+      var e = Alm.leer();
+      return st.every(function (x) { return x.cobrado; }) && !e.retos.cofre;
+    }
+
+    function abrirCofre() {
+      var e = Alm.leer();
+      if (e.retos.cofre) return 0;
+      e.retos.cofre = true;
+      Alm.guardar();
+      var premio = 40 + Math.floor(Math.random() * 40);
+      Eco.dar(premio, "cofre");
+      return premio;
+    }
+
+    return { estado: estado, cobrar: cobrar, cofreListo: cofreListo,
+             abrirCofre: abrirCofre };
+  })();
+
+  /* dibuja la tarjeta de retos en la pantalla de inicio */
+  function pintarRetos(cont) {
+    var st = Retos.estado();
+    var caja = document.createElement("section");
+    caja.className = "retos";
+    caja.innerHTML = '<h3 class="retos-tit">Retos de hoy</h3>';
+
+    st.forEach(function (x) {
+      var pct = Math.round(x.hecho / x.def.meta * 100);
+      var d = document.createElement("div");
+      d.className = "reto" + (x.cobrado ? " reto-cobrado" : x.completo ? " reto-listo" : "");
+      d.innerHTML =
+        '<span class="reto-icono">' + x.def.icono + '</span>' +
+        '<span class="reto-txt">' +
+          '<b>' + U.esc(x.def.tit) + '</b>' +
+          '<em>' + U.esc(x.def.sub) + '</em>' +
+          '<span class="reto-barra"><span class="reto-relleno" style="width:' + pct + '%"></span></span>' +
+        '</span>' +
+        '<span class="reto-der">' +
+          (x.cobrado ? '<span class="reto-ok">✓</span>'
+                     : '<span class="reto-n">' + x.hecho + '/' + x.def.meta + '</span>') +
+        '</span>';
+
+      if (x.completo && !x.cobrado) {
+        var b = document.createElement("button");
+        b.className = "btn btn-primario reto-btn";
+        b.textContent = "+" + x.def.pago;
+        b.addEventListener("click", function () {
+          var g = Retos.cobrar(x.def.id);
+          if (g) {
+            global.EFECTOS.Sonido.nivel();
+            global.EFECTOS.Particulas.estallar(b, 20);
+            global.EFECTOS.Particulas.flotar(b, "+" + g, "#2ee6a0");
+          }
+          setTimeout(function () { irA("casa"); }, 700);
+        });
+        d.querySelector(".reto-der").appendChild(b);
+      }
+      caja.appendChild(d);
+    });
+
+    if (Retos.cofreListo()) {
+      var cof = document.createElement("button");
+      cof.className = "cofre";
+      cof.innerHTML = '<span class="cofre-emoji">🎁</span>' +
+        '<span>¡Los tres retos hechos!<em>Tocá para abrir el cofre</em></span>';
+      cof.addEventListener("click", function () {
+        var p = Retos.abrirCofre();
+        global.EFECTOS.Sonido.nivel();
+        global.EFECTOS.Particulas.estallar(cof, 30, "#ffcc4d");
+        global.EFECTOS.Particulas.flotar(cof, "+" + p, "#ffcc4d");
+        setTimeout(function () { irA("casa"); }, 900);
+      });
+      caja.appendChild(cof);
+    }
+
+    // van arriba de los mundos: lo primero que ve al abrir es qué hacer hoy
+    var mundos = cont.querySelector(".mundos");
+    if (mundos) cont.insertBefore(caja, mundos);
+    else cont.appendChild(caja);
+  }
+
+  /* ==========================================================================
      CASA — elegir mundo
      ======================================================================== */
 
@@ -383,6 +650,7 @@
         '<button class="tienda-btn" id="btienda">' + esmeraldaSvg(18) +
           ' Prize Shop · ' + e.esmeraldas + '</button>' +
       '</section>';
+    pintarRetos(el.querySelector(".pantalla"));
     el.querySelectorAll(".mundo").forEach(function (b) {
       b.addEventListener("click", function () { irA("mundo", { mundo: b.dataset.m }); });
     });
@@ -409,6 +677,72 @@
   /* ==========================================================================
      MUNDO — lista de niveles
      ======================================================================== */
+
+  /* --- las listas que puede correr en el Speed Run -------------------------
+     Todas salen de los papeles que subió el papá. Cada una dice de cuál, para
+     que se sepa qué se está practicando y no parezca contenido inventado. */
+
+  function conjuntosDeLectura() {
+    var cs = [];
+
+    cs.push({
+      id: "vce-semana",
+      nombre: "Spelling de la semana",
+      fuente: "Newsletter 7–11 sep · patrón vCe",
+      items: D.MODULO3.spellingSemana.concat(D.MODULO3.vcePractica)
+    });
+
+    cs.push({
+      id: "sight-actual",
+      nombre: "Sight Words · Módulo " + D.MODULO_ACTUAL,
+      fuente: D.MODULO_PATRON[D.MODULO_ACTUAL],
+      items: D.SIGHT[D.MODULO_ACTUAL]
+    });
+
+    /* los módulos ya vistos, todos juntos: es su repaso acumulado */
+    var vistos = [];
+    for (var i = 1; i <= D.MODULO_ACTUAL; i++) vistos = vistos.concat(D.SIGHT[i]);
+    cs.push({
+      id: "sight-vistos",
+      nombre: "Sight Words · Módulos 1 a " + D.MODULO_ACTUAL,
+      fuente: "Lista oficial 26-27 · " + vistos.length + " palabras",
+      items: vistos
+    });
+
+    cs.push({
+      id: "nonsense-cvc",
+      nombre: "Nonsense Words · CVC",
+      fuente: "Sus hojas de CVC Nonsense Word Fluency",
+      items: D.NONSENSE.cvc
+    });
+
+    cs.push({
+      id: "nonsense-cvce",
+      nombre: "Nonsense Words · CVCe",
+      fuente: "Sus hojas de CVC and CVCE Nonsense Word Fluency",
+      items: D.NONSENSE.cvce
+    });
+
+    /* lo que le viene costando: el conjunto más útil de todos */
+    var cuestan = Pro.paraRepasar(60);
+    if (cuestan.length >= 8) {
+      var mapa = {};
+      Object.keys(D.SIGHT).forEach(function (k) {
+        D.SIGHT[k].forEach(function (w) { mapa[w.p] = w; });
+      });
+      D.NONSENSE.cvc.concat(D.NONSENSE.cvce).forEach(function (w) { mapa[w.p] = w; });
+      D.MODULO3.spellingSemana.concat(D.MODULO3.vcePractica)
+        .forEach(function (w) { mapa[w.p] = w; });
+      cs.unshift({
+        id: "cuestan",
+        nombre: "Lo que le cuesta",
+        fuente: cuestan.length + " palabras que salieron amarillas o rojas",
+        destacado: true,
+        items: cuestan.map(function (p) { return mapa[p] || { p: p }; })
+      });
+    }
+    return cs;
+  }
 
   function nivelesDe(mundo) {
     var e = Alm.leer();
@@ -437,13 +771,10 @@
         pantalla: "modulos"
       });
       lista.push({
-        id: "carrera", tit: "Speed Run", sub: "60 segundos · superá tu récord",
+        id: "carrera", tit: "Speed Run", sub: "Elegí la lista y la velocidad",
         etiqueta: (e.destrezas["record-ppm"] ? "Récord: " + e.destrezas["record-ppm"].mejor + " ppm" : "Nuevo"),
         juego: "lecturaPalabras",
-        cfg: function () {
-          // hasta 200 ppm por 30 s hacen falta ~100 palabras en la bolsa
-          return { items: U.tomar(D.NONSENSE.cvce.concat(D.NONSENSE.cvc), 120), modo: "carrera" };
-        }
+        cfg: function () { return { modo: "carrera", conjuntos: conjuntosDeLectura() }; }
       });
       lista.push({
         id: "sopa", tit: "Word Search", sub: "Encontrá las palabras",

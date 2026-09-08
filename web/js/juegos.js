@@ -236,7 +236,7 @@
       var palabras = cfg.items || [];
       var modo = cfg.modo || "practica";   // "practica" | "carrera"
       var m = ui.marco(el, modo === "carrera" ? "Speed Run" : "Word Reading",
-        modo === "carrera" ? "60 segundos · leé todas las que puedas"
+        modo === "carrera" ? "Elegí la lista y el ritmo"
                            : "Leé la palabra en voz alta");
 
       if (modo === "carrera" && Voz.hayMicrofono) return carrera();
@@ -385,7 +385,41 @@
          a poco y ver el progreso real.                                      */
 
       function carrera() {
-        elegirVelocidad();
+        if (cfg.conjuntos && cfg.conjuntos.length) elegirConjunto();
+        else elegirVelocidad();
+
+        /* Qué lista practicar. Todas salen de sus papeles, y cada una dice de
+           cuál — así se ve que no es contenido inventado sino su tarea. */
+        function elegirConjunto() {
+          m.cuerpo.innerHTML = "";
+          m.pie.innerHTML = "";
+
+          var cab = document.createElement("div");
+          cab.className = "vel-cab";
+          cab.innerHTML =
+            '<h3 class="vel-tit">¿Qué palabras?</h3>' +
+            '<p class="vel-sub">Todas salen de sus hojas de la escuela.</p>';
+          m.cuerpo.appendChild(cab);
+
+          var caja = document.createElement("div");
+          caja.className = "conjuntos";
+          cfg.conjuntos.forEach(function (c) {
+            var b = document.createElement("button");
+            b.className = "conjunto" + (c.destacado ? " conjunto-prio" : "");
+            b.innerHTML =
+              (c.destacado ? '<span class="conjunto-tag">Lo más útil</span>' : "") +
+              '<span class="conjunto-nom">' + U.esc(c.nombre) + '</span>' +
+              '<span class="conjunto-fuente">' + U.esc(c.fuente) + '</span>' +
+              '<span class="conjunto-n">' + c.items.length + ' palabras</span>';
+            b.addEventListener("click", function () {
+              palabras = U.mezclar(c.items);
+              Snd.bloque();
+              elegirVelocidad();
+            });
+            caja.appendChild(b);
+          });
+          m.cuerpo.appendChild(caja);
+        }
 
         function elegirVelocidad() {
           var e = N.Almacen.leer();
