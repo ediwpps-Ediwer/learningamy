@@ -2,14 +2,14 @@
 (function (root) {
   "use strict";
   var SKILLS = {
-    lectura: {nombre:"Lectura oral", en:"Word bridge", icon:"🌉", mundo:"reading", modo:"oral", ayuda:"Read each sound, then blend the sounds into a word.", es:"Decí cada sonido y luego unilos para leer la palabra."},
-    dictado: {nombre:"Escritura al dictado", en:"Word workshop", icon:"🛠️", mundo:"reading", modo:"dictado", ayuda:"Say the word slowly. Listen for each sound, then write it.", es:"Decí la palabra despacio, escuchá los sonidos y escribila."},
-    escucha: {nombre:"Comprensión escuchada", en:"Listening grove", icon:"🎧", mundo:"reading", modo:"escuchada", ayuda:"Listen for who is in the story and what happens.", es:"Escuchá quién aparece y qué sucede."},
-    comprension: {nombre:"Comprensión leída", en:"Story library", icon:"📚", mundo:"reading", modo:"leida", ayuda:"Read again. Find the sentence that helps you answer.", es:"Volvé al texto y buscá la frase que ayuda a responder."},
-    operaciones: {nombre:"Sumas y restas", en:"Build a bridge", icon:"🧱", mundo:"math", modo:"calculo", ayuda:"Use blocks or a number line. Make ten when it helps.", es:"Usá bloques o una recta numérica. Podés completar diez."},
-    numeros: {nombre:"Valor posicional", en:"Block towers", icon:"🏗️", mundo:"math", modo:"valor-posicional", ayuda:"Ten ones make one ten. Count tens, then ones.", es:"Diez unidades forman una decena. Contá decenas y unidades."},
-    formas: {nombre:"Atributos de figuras", en:"Shape garden", icon:"🔷", mundo:"math", modo:"geometria", ayuda:"Count straight sides and corners. Turn the shape: its name stays the same.", es:"Contá lados rectos y vértices. Girar una figura no cambia su nombre."},
-    graficas: {nombre:"Interpretación de gráficas", en:"Weather station", icon:"📊", mundo:"math", modo:"datos", ayuda:"Check the labels. Count each bar. Compare the amounts.", es:"Mirá las etiquetas y contá cada barra antes de comparar."}
+    lectura: {nombre:"Oral reading", en:"Word bridge", icon:"🌉", mundo:"reading", modo:"oral", ayuda:"Read each sound, then blend the sounds into a word.", es:"Decí cada sonido y luego unilos para leer la palabra."},
+    dictado: {nombre:"Spelling", en:"Word workshop", icon:"🛠️", mundo:"reading", modo:"dictado", ayuda:"Say the word slowly. Listen for each sound, then write it.", es:"Decí la palabra despacio, escuchá los sonidos y escribila."},
+    escucha: {nombre:"Listening comprehension", en:"Listening grove", icon:"🎧", mundo:"reading", modo:"escuchada", ayuda:"Listen for who is in the story and what happens.", es:"Escuchá quién aparece y qué sucede."},
+    comprension: {nombre:"Reading comprehension", en:"Story library", icon:"📚", mundo:"reading", modo:"leida", ayuda:"Read again. Find the sentence that helps you answer.", es:"Volvé al texto y buscá la frase que ayuda a responder."},
+    operaciones: {nombre:"Addition and subtraction", en:"Build a bridge", icon:"🧱", mundo:"math", modo:"calculo", ayuda:"Use blocks or a number line. Make ten when it helps.", es:"Usá bloques o una recta numérica. Podés completar diez."},
+    numeros: {nombre:"Place value", en:"Block towers", icon:"🏗️", mundo:"math", modo:"valor-posicional", ayuda:"Ten ones make one ten. Count tens, then ones.", es:"Diez unidades forman una decena. Contá decenas y unidades."},
+    formas: {nombre:"Shape attributes", en:"Shape garden", icon:"🔷", mundo:"math", modo:"geometria", ayuda:"Count straight sides and corners. Turn the shape: its name stays the same.", es:"Contá lados rectos y vértices. Girar una figura no cambia su nombre."},
+    graficas: {nombre:"Graph interpretation", en:"Weather station", icon:"📊", mundo:"math", modo:"datos", ayuda:"Check the labels. Count each bar. Compare the amounts.", es:"Mirá las etiquetas y contá cada barra antes de comparar."}
   };
   var STORIES = [
     ["Sam has a red bag. He puts a map in the bag. Then he walks to the park.","What does Sam put in the bag?","a map",["a hat","a map","a cup"]],
@@ -31,8 +31,8 @@
     "cupcake pinecone reptile invite lifetime flagpole inside sunshine bedtime pancake mistake escape".split(" ")
   ];
   var TASKS = [
-    {id:"vce-repaso",nombre:"Repaso de VCe",fecha:"2026-09-05",skill:"dictado",origen:"Módulo 3: lista escolar ya incorporada",objetivo:"Relacionar sonidos y escritura en palabras VCe",cambios:"Taller de palabras y comprobación al dictado; no representa entrega escolar."},
-    {id:"graficas-repaso",nombre:"Repaso de gráficas",fecha:"2026-09-05",skill:"graficas",origen:"Lesson 4: material escolar ya incorporado",objetivo:"Leer y comparar cantidades en gráficas",cambios:"Gráficas de recursos con números nuevos; mismo objetivo de interpretación."}
+    {id:"vce-repaso",nombre:"VCe review",fecha:"2026-09-05",skill:"dictado",origen:"Unit 3: school word list already added",objetivo:"Connect sounds and spelling in VCe words",cambios:"Word workshop and spelling check; this is not a school assignment."},
+    {id:"graficas-repaso",nombre:"Graph review",fecha:"2026-09-05",skill:"graficas",origen:"Lesson 4: school materials already added",objetivo:"Read and compare amounts in graphs",cambios:"Resource graphs with new numbers; same interpretation goal."}
   ];
   function day(t) { var d=new Date(t===undefined?Date.now():t); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function addDays(t,n) { var d=new Date(t); d.setDate(d.getDate()+n); return d.getTime(); }
@@ -57,7 +57,7 @@
       var transferred=retained&&fresh.length>=5&&fresh.filter(function(e){return e.result;}).length/fresh.length>=.8&&new Set(fresh.map(function(e){return e.day;})).size>=2;
       return {skill:skill,total:all.length,n:scored.length,pct:pct,help:all.filter(function(e){return e.help;}).length,
         pending:all.filter(function(e){return e.result===null;}).length,days:days.size,
-        status:transferred?"Transferencia observada":retained?"Consolidando":scored.length<3?"Por observar":pct<60?"Necesita práctica guiada":"En práctica",
+        status:transferred?"Transfer observed":retained?"Building consistency":scored.length<3?"More observations needed":pct<60?"Guided practice recommended":"In practice",
         referenceLevel:referenceLevel,level:scored.length>=5&&pct>=80?Math.min(2,referenceLevel+1):scored.length>=3&&pct<50?Math.max(0,referenceLevel-1):referenceLevel};
     }
     function priorities(mundo) {
@@ -172,7 +172,7 @@
       var phases=["recordar","aprender","resolver","demostrar"];
       var token="mission-"+d;
       var steps=keys.map(function(k,i){var s=summary(k);return {skill:k,phase:phases[i],done:false,cursor:0,
-        reason:(i===0&&reviews.length?"Repaso programado":s.n?"Observación reciente: "+s.status:"Falta observar esta habilidad"),
+        reason:(i===0&&reviews.length?"Scheduled review":s.n?"Recent observation: "+s.status:"This skill needs more observations"),
         level:s.level,questions:[pick(k,s.level,token,i*100),pick(k,s.level,token,i*100+40)],help:false};});
       // Reserve transfer examples separately from earlier mission items.
       var reserved=steps.slice(0,3).reduce(function(xs,s){return xs.concat(s.questions.map(function(q){return q.key;}));},[]);
@@ -198,7 +198,7 @@
       task=task||{};
       var today=day(clock()),current=a.missions[today];
       if(current&&!current.paid&&!current.steps.some(function(s){return s.done||s.cursor>0;}))delete a.missions[today];
-      a.task={id:"tarea-"+clock(),title:String(task.title||"Tarea del día").slice(0,100),subject:String(task.subject||"").slice(0,40),skill:SKILLS[task.skill]?task.skill:"",objective:String(task.objective||"").slice(0,180),notes:String(task.notes||"").slice(0,300),date:task.date||day(clock()),imageKey:task.imageKey||null,adaptation:task.adaptation||null,analysis:task.analysis||null};
+      a.task={id:"tarea-"+clock(),title:String(task.title||"Today's homework").slice(0,100),subject:String(task.subject||"").slice(0,40),skill:SKILLS[task.skill]?task.skill:"",objective:String(task.objective||"").slice(0,180),notes:String(task.notes||"").slice(0,300),date:task.date||day(clock()),imageKey:task.imageKey||null,adaptation:task.adaptation||null,analysis:task.analysis||null};
       save(); return a.task;
     }
     function clearTask() { a.task=null; save(); }

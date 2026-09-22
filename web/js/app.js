@@ -11,20 +11,20 @@
   var app, hud;
 
   /* ==========================================================================
-     HUD — avatar, esmeraldas, racha
+     HUD — avatar, gems, racha
      ======================================================================== */
 
   function pintarHud() {
     var e = Alm.leer();
     hud.innerHTML =
-      '<button class="hud-avatar" id="hudAvatar" aria-label="Mi personaje">' +
+      '<button class="hud-avatar" id="hudAvatar" aria-label="My character">' +
         N.Avatar.svg(e.jugador.avatar, 26) + '</button>' +
       '<span class="hud-nombre">' + U.esc(e.jugador.nombre || "Player") + '</span>' +
       '<span class="hud-sep"></span>' +
       '<span class="hud-esm" id="hudEsm">' + esmeraldaSvg(16) +
         '<b>' + e.esmeraldas + '</b></span>' +
       (e.racha.dias > 1 ? '<span class="hud-racha">🔥 ' + e.racha.dias + '</span>' : '') +
-      '<button class="hud-papa" id="hudPapa" aria-label="Panel de papá">👤</button>';
+      '<button class="hud-papa" id="hudPapa" aria-label="Parent dashboard">👤</button>';
     var a = document.getElementById("hudAvatar");
     if (a) a.addEventListener("click", function () { irA("casa"); });
     var p = document.getElementById("hudPapa");
@@ -82,14 +82,14 @@
       Alm.ponerModo("local");
       rutear();
     }));
-    acc.appendChild(J.ui.boton("Entrar con cuenta", "btn-fantasma", function () {
+    acc.appendChild(J.ui.boton("Log in", "btn-fantasma", function () {
       Alm.ponerModo("cuenta");
       irA("entrar");
     }));
     var pie = document.createElement("p");
     pie.className = "nota portada-nota";
-    pie.textContent = "Con un solo jugador, PLAY alcanza. Las cuentas hacen falta " +
-      "cuando juega más de un chico en el mismo aparato.";
+    pie.textContent = "For one player, PLAY is all you need. Create accounts only " +
+      "if more than one child will use the same device.";
     el.querySelector(".portada").appendChild(pie);
   };
 
@@ -99,13 +99,13 @@
      Las cuentas las crea el adulto desde su panel — esa es la autorización. */
 
   var ERRORES = {
-    "datos-incorrectos": "Usuario o contraseña incorrectos.",
-    "usuario-invalido": "El usuario va sin espacios ni acentos, de 3 a 20 letras.",
-    "usuario-ocupado": "Ese usuario ya existe. Elegí otro.",
-    "clave-corta": "La contraseña necesita al menos 6 caracteres.",
-    "sin-conexion": "No hay conexión con el servidor.",
+    "datos-incorrectos": "Incorrect username or password.",
+    "usuario-invalido": "Use 3–20 letters, with no spaces or accents.",
+    "usuario-ocupado": "That username is already taken. Choose another.",
+    "clave-corta": "Password must be at least 6 characters.",
+    "sin-conexion": "Could not connect to the server.",
     "falta-apagar-confirmacion":
-      "Falta apagar la confirmación por correo en Supabase: " +
+      "Email confirmation must be turned off in Supabase: " +
       "Authentication → Sign In / Providers → Email → Confirm email → OFF."
   };
 
@@ -114,7 +114,7 @@
       '<section class="pantalla centro">' +
         '<div class="portada-logo">' + logoSvg() + '</div>' +
         '<h2 class="tit">Log in</h2>' +
-        '<p class="sub">Escribí tu usuario y tu contraseña</p>' +
+        '<p class="sub">Enter your username and password</p>' +
         '<form class="form-login" id="f">' +
           '<div class="campo">' +
             '<label for="u">Username</label>' +
@@ -133,7 +133,7 @@
           '<p class="error" id="err" hidden></p>' +
           '<button class="btn btn-primario btn-grande" type="submit" id="go">Enter</button>' +
         '</form>' +
-        '<p class="nota">¿No tenés cuenta? La crea papá desde su panel.</p>' +
+        '<p class="nota">Need an account? Ask a parent to create one from the dashboard.</p>' +
       '</section>';
 
     var err = el.querySelector("#err");
@@ -146,7 +146,7 @@
       ev.preventDefault();
       var b = el.querySelector("#go");
       err.hidden = true;
-      b.disabled = true; b.textContent = "Entrando…";
+      b.disabled = true; b.textContent = "Signing in…";
       N.Auth.entrar(el.querySelector("#u").value, el.querySelector("#c").value)
         .then(function (r) {
           if (r.ok) {
@@ -168,7 +168,7 @@
     el.innerHTML =
       '<section class="pantalla">' +
         '<h2 class="tit">Make your character</h2>' +
-        '<p class="sub">Armá tu personaje</p>' +
+        '<p class="sub">Create your character</p>' +
         '<div class="avatar-vista" id="vista"></div>' +
         '<div class="avatar-opts" id="opts"></div>' +
         '<div class="campo">' +
@@ -186,7 +186,7 @@
     repintar();
 
     /* Piel y ojos siempre libres: eso es quién es él, no un premio.
-       Pelo, ropa y sombreros se desbloquean con esmeraldas — le dan algo que
+       Pelo, ropa y sombreros se desbloquean con gems — le dan algo que
        comprar YA, sin tener que esperar a que papá apruebe un canje. */
     var LIBRES = { piel: 99, ojos: 99, pelo: 3, ropa: 3, sombrero: 2 };
     var PRECIO = { pelo: 30, ropa: 30, sombrero: 60 };
@@ -201,10 +201,10 @@
     }
     function comprar(cual, i, alHacer) {
       var precio = PRECIO[cual];
-      if (!confirm("¿Desbloquear esto por " + precio + " esmeraldas?\n\nTenés " +
+      if (!confirm("Unlock this for " + precio + " gems?\n\nYou have " +
                    Eco.total() + ".")) return;
       if (!Eco.gastar(precio)) {
-        alert("Te faltan " + (precio - Eco.total()) + " esmeraldas. ¡Seguí jugando!");
+        alert("You need " + (precio - Eco.total()) + " more gems. Keep playing!");
         return;
       }
       var e2 = Alm.leer();
@@ -265,7 +265,7 @@
         var libre = tiene("sombrero", i);
         var b = document.createElement("button");
         b.className = "pastilla" + (a.sombrero === i ? " sel" : "") + (libre ? "" : " trabado");
-        b.textContent = s === "ninguno" ? "—" : s;
+      b.textContent = s === "ninguno" ? "—" : s;
         if (!libre) b.innerHTML += ' <span class="candado">' + PRECIO.sombrero + '</span>';
         b.addEventListener("click", function () {
           if (!tiene("sombrero", i)) return comprar("sombrero", i, function () {
@@ -311,21 +311,21 @@
      ======================================================================== */
 
   var DIAG = [
-    { id: "sight-1", tit: "Palabras conocidas 1", juego: "lecturaPalabras",
+    { id: "sight-1", tit: "Sight words 1", juego: "lecturaPalabras",
       cfg: function () { return { items: U.tomar(D.SIGHT[1].concat(D.SIGHT[2]), 8), modo: "practica" }; } },
-    { id: "sight-2", tit: "Palabras conocidas 2", juego: "lecturaPalabras",
+    { id: "sight-2", tit: "Sight words 2", juego: "lecturaPalabras",
       cfg: function () { return { items: U.tomar(D.SIGHT[3].concat(D.SIGHT[4]), 8), modo: "practica" }; } },
-    { id: "cvc", tit: "Decodificar CVC", juego: "lecturaPalabras",
+    { id: "cvc", tit: "Read CVC words", juego: "lecturaPalabras",
       cfg: function () { return { items: U.tomar(D.NONSENSE.cvc, 8), modo: "practica" }; } },
-    { id: "cvce", tit: "Decodificar CVCe", juego: "lecturaPalabras",
+    { id: "cvce", tit: "Read CVCe words", juego: "lecturaPalabras",
       cfg: function () { return { items: U.tomar(D.NONSENSE.cvce, 8), modo: "practica" }; } },
-    { id: "spelling", tit: "Escribir palabras", juego: "spelling",
+    { id: "spelling", tit: "Spell words", juego: "spelling",
       cfg: function () { return { items: U.tomar(D.MODULO3.spellingSemana, 5) }; } },
-    { id: "operaciones", tit: "Sumas y restas", juego: "operaciones",
+    { id: "operaciones", tit: "Addition and subtraction", juego: "operaciones",
       cfg: function () { return { items: U.tomar(D.ECUACIONES_CLASE, 6), estrategia: false }; } },
-    { id: "graficas", tit: "Leer gráficas", juego: "graficas",
+    { id: "graficas", tit: "Read graphs", juego: "graficas",
       cfg: function () { return { grafica: D.GRAFICAS[0], cuantas: 4 }; } },
-    { id: "formas", tit: "Formas", juego: "formas",
+    { id: "formas", tit: "Shapes", juego: "formas",
       cfg: function () { return { rondas: 5 }; } }
   ];
 
@@ -333,21 +333,21 @@
     el.innerHTML =
       '<section class="pantalla centro">' +
         '<h2 class="tit">Let\'s see what you know</h2>' +
-        '<p class="sub">Vamos a ver qué sabés. No es un examen — no se puede perder.</p>' +
+        '<p class="sub">Let’s see what you know. This is not a test, and you can’t lose.</p>' +
         '<ul class="lista-diag">' +
           DIAG.map(function (d, i) {
             return '<li><span class="n">' + (i + 1) + '</span>' + U.esc(d.tit) + '</li>';
           }).join("") +
         '</ul>' +
-        '<p class="nota">Podés parar cuando quieras y seguir después.</p>' +
+        '<p class="nota">You can pause anytime and come back later.</p>' +
         '<div class="acc" id="acc"></div>' +
       '</section>';
     el.querySelector("#acc").appendChild(
-      J.ui.boton("▶ Empezar", "btn-primario btn-grande", function () {
+      J.ui.boton("▶ Start", "btn-primario btn-grande", function () {
         irA("diag", { paso: 0 });
       }));
     el.querySelector("#acc").appendChild(
-      J.ui.boton("Saltar por ahora", "btn-fantasma", function () { irA("casa"); }));
+      J.ui.boton("Skip for now", "btn-fantasma", function () { irA("casa"); }));
   };
 
   pantallas.diag = function (el, datos) {
@@ -387,8 +387,8 @@
     var r = e.diagnostico.resultados;
     el.innerHTML =
       '<section class="pantalla centro">' +
-        '<h2 class="tit">¡Listo!</h2>' +
-        '<p class="sub">Esto es lo que vimos</p>' +
+        '<h2 class="tit">All done!</h2>' +
+        '<p class="sub">Here’s what we explored</p>' +
         '<div class="diag-tabla">' +
           DIAG.map(function (d) {
             var x = r[d.id];
@@ -400,48 +400,48 @@
                 (pct === null ? "—" : pct + "%") + '</span></div>';
           }).join("") +
         '</div>' +
-        '<p class="nota">Papá puede ver el detalle completo en su panel.</p>' +
+        '<p class="nota">A parent can see the full details in the dashboard.</p>' +
         '<div class="acc" id="acc"></div>' +
       '</section>';
     el.querySelector("#acc").appendChild(
-      J.ui.boton("Ir a jugar →", "btn-primario btn-grande", function () { irA("casa"); }));
+      J.ui.boton("Go play →", "btn-primario btn-grande", function () { irA("casa"); }));
   }
 
   /* ==========================================================================
      RETOS DEL DÍA
      Tres misiones que cambian cada día. Existen por una razón concreta: una
-     lista de niveles siempre disponibles no da ningún motivo para abrir el
-     juego HOY. Un reto que vence esta noche, sí.
+     lista de niveles siempre available no da ningún motivo para abrir el
+     juego HOY. Un reto que vence esta noche, yes.
      El progreso se calcula del historial que ya se guarda, no de contadores
-     aparte — así nunca se desincroniza de lo que realmente hizo.
+     aparte — it never drifts out of sync with what the player actually did.
      ======================================================================== */
 
   var Retos = (function () {
 
     var CATALOGO = [
       { id: "verde10", icono: "🟢", meta: 10, pago: 20,
-        tit: "10 palabras en verde",
-        sub: "Leelas o escribilas bien a la primera",
+        tit: "Get 10 words right",
+        sub: "Read or spell each one correctly on the first try",
         cuenta: function (e) { return semaforosHoy(e, "verde"); } },
 
       { id: "spell5", icono: "✏️", meta: 5, pago: 25,
-        tit: "Escribí 5 palabras",
-        sub: "En Spelling, sin usar la ayuda",
+        tit: "Spell 5 words",
+        sub: "Play Spelling without using a hint",
         cuenta: function (e) { return semaforosHoy(e, "verde", "encoding"); } },
 
       { id: "math15", icono: "🔢", meta: 15, pago: 20,
-        tit: "15 aciertos en Math",
-        sub: "En cualquier juego del mundo azul",
+        tit: "Get 15 correct answers in Math",
+        sub: "Play any game in the Math world",
         cuenta: function (e) { return aciertosHoyMundo(e, "math"); } },
 
       { id: "niveles3", icono: "🏁", meta: 3, pago: 25,
-        tit: "Terminá 3 niveles",
-        sub: "Los que quieras, de los dos mundos",
+        tit: "Finish 3 levels",
+        sub: "Choose any games from either world",
         cuenta: function (e) { return sesionesHoy(e).length; } },
 
       { id: "cuento1", icono: "📖", meta: 1, pago: 20,
-        tit: "Leé un cuento entero",
-        sub: "Con la ronda Challenger al final",
+        tit: "Read a whole story",
+        sub: "Then try the Challenger round",
         cuenta: function (e) {
           return sesionesHoy(e).filter(function (s) {
             return String(s.nivel).indexOf("cuento") === 0;
@@ -449,15 +449,15 @@
         } },
 
       { id: "carrera1", icono: "⚡", meta: 1, pago: 30,
-        tit: "Corré un Speed Run",
-        sub: "A la velocidad que quieras",
+        tit: "Try a Speed Run",
+        sub: "Choose your own speed",
         cuenta: function (e) {
           return sesionesHoy(e).filter(function (s) { return s.nivel === "carrera"; }).length;
         } },
 
       { id: "sopa1", icono: "🔎", meta: 1, pago: 20,
-        tit: "Ganá una sopa de letras",
-        sub: "Encontrá todas las palabras",
+        tit: "Win a Word Search",
+        sub: "Find every word",
         cuenta: function (e) {
           return sesionesHoy(e).filter(function (s) {
             return s.nivel === "sopa" && s.aciertos === s.total;
@@ -465,8 +465,8 @@
         } },
 
       { id: "esm50", icono: "💚", meta: 50, pago: 20,
-        tit: "Ganá 50 esmeraldas",
-        sub: "Sumando de todos los niveles de hoy",
+        tit: "Earn 50 gems",
+        sub: "Add up gems from all of today’s games",
         cuenta: function (e) {
           return sesionesHoy(e).reduce(function (s, x) { return s + (x.esmeraldas || 0); }, 0);
         } }
@@ -498,7 +498,7 @@
       return n;
     }
 
-    /* Los tres del día salen de la fecha, no del azar: así no cambian al
+    /* The daily three are date-based, not random: they do not change when you
        recargar, y no se puede rerollear hasta que salga uno fácil. */
     function delDia() {
       var f = hoy();
@@ -565,7 +565,7 @@
     var st = Retos.estado();
     var caja = document.createElement("section");
     caja.className = "retos";
-    caja.innerHTML = '<h3 class="retos-tit">Retos de hoy</h3>';
+    caja.innerHTML = '<h3 class="retos-tit">Today’s challenges</h3>';
 
     st.forEach(function (x) {
       var pct = Math.round(x.hecho / x.def.meta * 100);
@@ -605,7 +605,7 @@
       var cof = document.createElement("button");
       cof.className = "cofre";
       cof.innerHTML = '<span class="cofre-emoji">🎁</span>' +
-        '<span>¡Los tres retos hechos!<em>Tocá para abrir el cofre</em></span>';
+        '<span>All three challenges complete!<em>Tap to open your chest</em></span>';
       cof.addEventListener("click", function () {
         var p = Retos.abrirCofre();
         global.EFECTOS.Sonido.nivel();
@@ -688,14 +688,14 @@
 
     cs.push({
       id: "vce-semana",
-      nombre: "Spelling de la semana",
-      fuente: "Newsletter 7–11 sep · patrón vCe",
+      nombre: "Spelling: This Week",
+      fuente: "Newsletter Sep 7–11 · VCe pattern",
       items: D.MODULO3.spellingSemana.concat(D.MODULO3.vcePractica)
     });
 
     cs.push({
       id: "sight-actual",
-      nombre: "Sight Words · Módulo " + D.MODULO_ACTUAL,
+      nombre: "Sight Words · Unit " + D.MODULO_ACTUAL,
       fuente: D.MODULO_PATRON[D.MODULO_ACTUAL],
       items: D.SIGHT[D.MODULO_ACTUAL]
     });
@@ -705,7 +705,7 @@
     for (var i = 1; i <= D.MODULO_ACTUAL; i++) vistos = vistos.concat(D.SIGHT[i]);
     cs.push({
       id: "sight-vistos",
-      nombre: "Sight Words · Módulos 1 a " + D.MODULO_ACTUAL,
+      nombre: "Sight Words · Units 1–" + D.MODULO_ACTUAL,
       fuente: "Lista oficial 26-27 · " + vistos.length + " palabras",
       items: vistos
     });
@@ -753,14 +753,14 @@
     if (mundo === "reading") {
       lista.push({
         id: "vce-semana", tit: "Spelling: VCe", sub: "made · safe · time · like",
-        etiqueta: "Material escolar · repaso", prioridad: true,
+        etiqueta: "School review", prioridad: true,
         juego: "spelling", cfg: { items: D.MODULO3.spellingSemana }
       });
       lista.push({
         id: "sight-modulo-" + D.MODULO_ACTUAL,
         tit: "Sight Words " + D.MODULO_ACTUAL,
         sub: D.MODULO_PATRON[D.MODULO_ACTUAL],
-        etiqueta: "Módulo disponible",
+        etiqueta: "Available unit",
         juego: "lecturaPalabras",
         cfg: function () {
           return { items: U.tomar(D.SIGHT[D.MODULO_ACTUAL], 10), modo: "practica" };
@@ -768,71 +768,71 @@
       });
       lista.push({
         id: "sight-todos", tit: "All Sight Words",
-        sub: "Los 12 módulos · " + D.SIGHT_TOTAL + " palabras",
+        sub: "12 units · " + D.SIGHT_TOTAL + " words",
         pantalla: "modulos"
       });
       lista.push({
-        id: "carrera", tit: "Speed Run", sub: "Elegí la lista y la velocidad",
-        etiqueta: (e.destrezas["record-ppm"] ? "Récord: " + e.destrezas["record-ppm"].mejor + " ppm" : "Nuevo"),
+        id: "carrera", tit: "Speed Run", sub: "Choose a word list and speed",
+        etiqueta: (e.destrezas["record-ppm"] ? "Best: " + e.destrezas["record-ppm"].mejor + " wpm" : "New"),
         juego: "lecturaPalabras",
         cfg: function () { return { modo: "carrera", conjuntos: conjuntosDeLectura() }; }
       });
       lista.push({
-        id: "sopa", tit: "Word Search", sub: "Encontrá las palabras",
+        id: "sopa", tit: "Word Search", sub: "Find the words",
         juego: "sopaLetras",
         cfg: { items: U.tomar(D.MODULO3.vcePractica, 6), lado: 10, diagonales: true }
       });
       D.CUENTOS.forEach(function (c) {
         lista.push({
-          id: "cuento-" + c.id, tit: c.titulo, sub: "Cuento + Challenger",
+          id: "cuento-" + c.id, tit: c.titulo, sub: "Story + Challenger",
           juego: "cuento", cfg: { cuento: c }
         });
       });
       lista.push({
-        id: "cvc-fluidez", tit: "Nonsense Words", sub: "Decodificación pura",
+        id: "cvc-fluidez", tit: "Nonsense Words", sub: "Practice sounding out words",
         juego: "lecturaPalabras",
         cfg: { items: U.tomar(D.NONSENSE.cvc, 10), modo: "practica" }
       });
       if (repasar.length >= 4) {
         lista.unshift({
-          id: "repaso", tit: "Repaso", sub: repasar.slice(0, 4).join(" · "),
-          etiqueta: "Lo que costó", prioridad: true,
+          id: "repaso", tit: "Review", sub: repasar.slice(0, 4).join(" · "),
+          etiqueta: "Keep practicing", prioridad: true,
           juego: "lecturaPalabras",
           cfg: { items: repasar.map(function (p) { return { p: p }; }), modo: "practica" }
         });
       }
     } else {
       lista.push({
-        id: "graficas-semana", tit: "Bar & Picture Graphs", sub: "Leer datos",
-        etiqueta: "Material escolar · repaso", prioridad: true,
+        id: "graficas-semana", tit: "Bar & Picture Graphs", sub: "Read the data",
+        etiqueta: "School review", prioridad: true,
         juego: "graficas", cfg: { cuantas: 5 }
       });
       lista.push({
-        id: "ecuaciones", tit: "Equation Cards", sub: "El hueco no siempre va al final",
+        id: "ecuaciones", tit: "Equation Cards", sub: "The missing number can go anywhere",
         juego: "operaciones", cfg: { items: D.ECUACIONES_CLASE.slice() }
       });
       lista.push({
-        id: "facts", tit: "Math Facts", sub: "Suma y resta hasta 20",
+        id: "facts", tit: "Math Facts", sub: "Add and subtract up to 20",
         juego: "operaciones", cfg: { cuantas: 10, max: 20 }
       });
       lista.push({
-        id: "problemas", tit: "Word Problems", sub: "Paso a paso",
+        id: "problemas", tit: "Word Problems", sub: "Step by step",
         juego: "problemas", cfg: { cuantas: 4 }
       });
       lista.push({
-        id: "dinero-id", tit: "Coins & Bills", sub: "¿Cuánto vale?",
+        id: "dinero-id", tit: "Coins & Bills", sub: "What is it worth?",
         juego: "monedas", cfg: { modo: "identificar", rondas: 6 }
       });
       lista.push({
-        id: "dinero-contar", tit: "Count the Money", sub: "Sumá las monedas",
+        id: "dinero-contar", tit: "Count the Money", sub: "Add the coins",
         juego: "monedas", cfg: { modo: "contar", rondas: 6 }
       });
       lista.push({
-        id: "tienda-mate", tit: "The Shop", sub: "Comprar y dar vuelto",
+        id: "tienda-mate", tit: "The Shop", sub: "Shop and make change",
         juego: "monedas", cfg: { modo: "tienda", rondas: 6 }
       });
       lista.push({
-        id: "formas", tit: "Shapes", sub: "2D y 3D",
+        id: "formas", tit: "Shapes", sub: "2D and 3D",
         etiqueta: "Practice shapes", juego: "formas", cfg: { rondas: 8 }
       });
     }
@@ -893,9 +893,9 @@
           places.map(function (p) { return '<button class="av-world-place av-place-' + p.id + '" data-place="' + p.id + '" style="left:' + p.x + '%;top:' + p.y + '%" aria-label="' + p.title + '"><span class="av-place-icon">' + p.icon + '</span><strong>' + p.title + '</strong><small>' + p.detail + '</small><span class="av-place-action">Walk closer</span></button>'; }).join("") +
           '<div class="av-world-player" id="av-world-player" style="left:50%;top:79%" aria-label="Your character">' + N.Avatar.svg(e.jugador.avatar, 58) + '<span class="av-player-shadow"></span></div>' +
         '</div>' +
-        '<div class="av-world-footer"><p id="av-world-status" class="av-world-status" aria-live="polite">Walk to the Reading Library, Math Workshop or Mission Portal. · Explorá el mapa.</p>' +
+        '<div class="av-world-footer"><p id="av-world-status" class="av-world-status" aria-live="polite">Walk to the Reading Library, Math Workshop, or Mission Portal.</p>' +
           '<div class="av-world-controls" role="group" aria-label="Movement controls"><button data-move="up" aria-label="Walk up">▲</button><button data-move="left" aria-label="Walk left">◀</button><button data-move="down" aria-label="Walk down">▼</button><button data-move="right" aria-label="Walk right">▶</button></div>' +
-        '</div><p class="nota">Tap the arrows to move, or use arrow keys. Choose Activities any time. · Podés volver o pausar cuando quieras.</p>' +
+        '</div><p class="nota">Tap the arrows or use the arrow keys to move. You can pause or return anytime.</p>' +
       '</section>';
     el.querySelector("#av-world-back").addEventListener("click", function () { irA("casa"); });
     el.querySelector("#av-world-bag").addEventListener("click", function () { irA("mochila"); });
@@ -914,7 +914,7 @@
         b.querySelector(".av-place-action").textContent = d < 19 ? "Enter →" : "Walk closer";
         if (d < nearestDistance) { nearest = p; nearestDistance = d; }
       });
-      status.textContent = nearestDistance < 19 ? "You are near " + nearest.title + ". Tap Enter to explore!" : "Walk to the Reading Library, Math Workshop or Mission Portal. · Explorá el mapa.";
+      status.textContent = nearestDistance < 19 ? "You are near " + nearest.title + ". Tap Enter to explore!" : "Walk to the Reading Library, Math Workshop, or Mission Portal.";
     }
     function frameMove(time) {
       if (!scene.isConnected) { frame = 0; return; }
@@ -994,7 +994,7 @@
     draw();
   };
   /* --- los 12 módulos de sight words --------------------------------------
-     360 palabras en total. Cada módulo agrupa un patrón fonético, así que
+     360 words total. Each unit groups a phonics pattern, and picking one means
      elegir uno es elegir qué se practica, no solo qué palabras salen.        */
 
   pantallas.modulos = function (el, datos) {
@@ -1003,7 +1003,7 @@
       '<section class="pantalla">' +
         '<button class="volver" id="volver">← Back</button>' +
         '<h2 class="tit">Sight Words</h2>' +
-        '<p class="sub">12 módulos · ' + D.SIGHT_TOTAL + ' palabras del año</p>' +
+        '<p class="sub">12 units · ' + D.SIGHT_TOTAL + ' words</p>' +
         '<div class="niveles" id="mods"></div>' +
       '</section>';
     el.querySelector("#volver").addEventListener("click", function () {
@@ -1024,11 +1024,11 @@
       var b = document.createElement("button");
       b.className = "nivel" + (mod === D.MODULO_ACTUAL ? " nivel-prio" : "");
       b.innerHTML =
-        (mod === D.MODULO_ACTUAL ? '<span class="nivel-tag">Módulo disponible</span>' : "") +
+        (mod === D.MODULO_ACTUAL ? '<span class="nivel-tag">Available unit</span>' : "") +
         '<span class="nivel-tit">Module ' + mod + '</span>' +
         '<span class="nivel-sub">' + U.esc(D.MODULO_PATRON[mod] || "") + '</span>' +
         '<span class="mod-barra"><span class="mod-relleno" style="width:' + pct + '%"></span></span>' +
-        '<span class="mod-n">' + dom + ' / ' + palabras.length + ' observadas en varios días</span>';
+        '<span class="mod-n">' + dom + ' / ' + palabras.length + ' seen across multiple days</span>';
       b.addEventListener("click", function () {
         irA("jugar", { mundo: "reading", nivel: {
           id: "sight-modulo-" + mod,
@@ -1053,7 +1053,7 @@
 
     var barra = document.createElement("div");
     barra.className = "juego-barra";
-    barra.innerHTML = '<button class="volver" id="salir">← Salir</button>';
+    barra.innerHTML = '<button class="volver" id="salir">← Exit</button>';
     el.appendChild(barra);
     barra.querySelector("#salir").addEventListener("click", function () {
       volver();
@@ -1083,7 +1083,7 @@
     el.innerHTML =
       '<section class="pantalla centro">' +
         '<h2 class="tit">Buen trabajo</h2>' +
-        '<p class="sub">Ya jugaste bastante. Mañana seguimos y vas a rendir más.</p>' +
+        '<p class="sub">You’ve played a lot today. Come back tomorrow for more.</p>' +
         '<div class="acc" id="acc"></div>' +
       '</section>';
     el.querySelector("#acc").appendChild(J.ui.boton("OK", "btn-primario", listo));
@@ -1099,7 +1099,7 @@
       '<section class="pantalla">' +
         '<button class="volver" id="volver">← Back</button>' +
         '<h2 class="tit">Prize Shop</h2>' +
-        '<p class="sub">Tenés ' + e.esmeraldas + ' esmeraldas</p>' +
+        '<p class="sub">You have ' + e.esmeraldas + ' gems</p>' +
         '<div class="premios" id="premios"></div>' +
       '</section>';
     el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
@@ -1115,15 +1115,15 @@
         '<span class="premio-costo">' + esmeraldaSvg(14) + ' ' + p.costo + '</span>';
       var b = document.createElement("button");
       b.className = "btn " + (puede ? "btn-primario" : "btn-fantasma");
-      b.textContent = puede ? "Canjear" : "Faltan " + (p.costo - e.esmeraldas);
+      b.textContent = puede ? "Redeem" : "Need " + (p.costo - e.esmeraldas) + " more gems";
       b.disabled = !puede;
       b.addEventListener("click", function () {
-        if (!confirm("¿Canjear «" + p.nombre + "» por " + p.costo + " esmeraldas?\n\nPapá tiene que aprobarlo.")) return;
+        if (!confirm("Redeem “" + p.nombre + "” for " + p.costo + " gems?\n\nA parent must approve it.")) return;
         if (Eco.gastar(p.costo)) {
           var e2 = Alm.leer();
           e2.canjes.push({ t: Date.now(), premio: p.nombre, costo: p.costo, entregado: false });
           Alm.guardar();
-          alert("¡Listo! Mostrale esto a papá.");
+          alert("Done! Show this to a parent.");
           irA("tienda");
         }
       });
@@ -1139,30 +1139,30 @@
   function pedirPin() {
     // barrera simple: una cuenta que un chico de 7 no resuelve de memoria
     var a = U.entero(11, 19), b = U.entero(11, 19);
-    var r = prompt("Panel de papá\n\n¿Cuánto es " + a + " × " + b + "?");
+    var r = prompt("Parent dashboard\n\nWhat is " + a + " × " + b + "?");
     if (r === null) return;
     if (parseInt(r, 10) === a * b) irA("panel");
-    else alert("No es correcto.");
+    else alert("That is not correct.");
   }
 
   pantallas.panel = function (el) {
     var e = Alm.leer();
     el.innerHTML =
       '<section class="pantalla panel">' +
-        '<button class="volver" id="volver">← Salir del panel</button>' +
-        '<h2 class="tit">Panel de papá</h2>' +
+        '<button class="volver" id="volver">← Exit dashboard</button>' +
+        '<h2 class="tit">Parent dashboard</h2>' +
         '<nav class="panel-tabs">' +
-          '<button data-t="resumen" class="tab activo">Resumen</button>' +
-          '<button data-t="aprendizaje" class="tab">Ruta y aprendizaje</button>' +
-          '<button data-t="destrezas" class="tab">Historial</button>' +
-          '<button data-t="palabras" class="tab">Palabras</button>' +
-          '<button data-t="premios" class="tab">Premios</button>' +
-          '<button data-t="jugadores" class="tab">Jugadores</button>' +
-          '<button data-t="ajustes" class="tab">Ajustes</button>' +
+          '<button data-t="resumen" class="tab activo">Overview</button>' +
+          '<button data-t="aprendizaje" class="tab">Learning plan</button>' +
+          '<button data-t="destrezas" class="tab">History</button>' +
+          '<button data-t="palabras" class="tab">Words</button>' +
+          '<button data-t="premios" class="tab">Rewards</button>' +
+          '<button data-t="jugadores" class="tab">Players</button>' +
+          '<button data-t="ajustes" class="tab">Settings</button>' +
         '</nav>' +
-        '<p class="panel-quien">' + (Alm.esPrueba() ? 'Modo <b>prueba</b>'
-          : Alm.modo() === "cuenta" ? 'Sesión de <b>' + U.esc(N.Auth.miNombre() || "—") + '</b>'
-          : 'Jugador <b>' + U.esc(Alm.leer().jugador.nombre || "—") + '</b> · sin cuenta') + '</p>' +
+        '<p class="panel-quien">' + (Alm.esPrueba() ? 'Mode: <b>test</b>'
+          : Alm.modo() === "cuenta" ? 'Signed in as <b>' + U.esc(N.Auth.miNombre() || "—") + '</b>'
+          : 'Player <b>' + U.esc(Alm.leer().jugador.nombre || "—") + '</b> · local') + '</p>' +
         '<div id="panelCuerpo"></div>' +
       '</section>';
     el.querySelector("#volver").addEventListener("click", function () { irA("casa"); });
@@ -1191,35 +1191,34 @@
     /* --- cuentas y chicos a cargo ----------------------------------------- */
     function jugadores() {
       if (Alm.esPrueba()) {
-        cuerpo.innerHTML = '<p class="nota">Estás en modo prueba, sin cuenta. ' +
-          'Salí del modo prueba para administrar jugadores.</p>';
+        cuerpo.innerHTML = '<p class="nota">You are in test mode without an account. ' +
+          'Exit test mode to manage players.</p>';
         return;
       }
 
       /* Sin cuenta: un solo jugador, todo en este aparato. */
       if (Alm.modo() !== "cuenta") {
         cuerpo.innerHTML =
-          '<div class="tarjeta"><span class="tarjeta-et">Modo actual</span>' +
-          '<span class="tarjeta-v">Un jugador</span>' +
-          '<span class="tarjeta-s">sin cuenta · todo en este aparato</span></div>' +
-          '<p class="nota">Así está bien mientras juegue Gabriel solo: no hay ' +
-          'contraseña que escribir y funciona sin internet.</p>' +
-          '<h3 class="panel-h3">¿Cuándo conviene pasar a cuentas?</h3>' +
+          '<div class="tarjeta"><span class="tarjeta-et">Current mode</span>' +
+          '<span class="tarjeta-v">One player</span>' +
+          '<span class="tarjeta-s">local · saved on this device</span></div>' +
+          '<p class="nota">This works well while Gaby is the only player: no ' +
+          'password is needed, and the game works offline.</p>' +
+          '<h3 class="panel-h3">When should I switch to accounts?</h3>' +
           '<ul class="lista-simple">' +
-            '<li>Cuando juegue más de un chico en el mismo aparato — sin cuentas ' +
-            'se mezclan los progresos.</li>' +
-            '<li>Cuando quieras seguir el progreso desde otro aparato.</li>' +
+            '<li>When more than one child uses this device — without accounts ' +
+            'their progress gets mixed.</li>' +
+            '<li>When you want to follow progress from another device.</li>' +
           '</ul>' +
-          '<p class="nota">Requiere dos pasos en Supabase (crear la tabla y apagar ' +
-          'la confirmación por correo). El progreso que ya tenga <b>no se pierde</b>: ' +
-          'se sube a la cuenta nueva.</p>' +
+          '<p class="nota">Account setup requires two Supabase steps (create the table and turn off ' +
+          'email confirmation). Existing progress will be kept and uploaded to the new account.</p>' +
           '<div class="acc" id="accModo"></div>';
         cuerpo.querySelector("#accModo").appendChild(
-          J.ui.boton("Pasar a cuentas", "btn-suave", function () {
+          J.ui.boton("Set up accounts", "btn-suave", function () {
             if (!confirm(
               "Para usar cuentas hacen falta dos pasos en Supabase.\n\n" +
-              "Si ya los hiciste, seguí. Si no, el juego no va a poder crear " +
-              "cuentas todavía.\n\n¿Seguir?")) return;
+              "If you already completed them, continue. Otherwise, the game cannot create " +
+              "accounts yet.\n\nContinue?")) return;
             Alm.ponerModo("cuenta");
             irA("entrar");
           }));
@@ -1228,30 +1227,30 @@
 
       var codigo = N.Auth.miCodigo();
       cuerpo.innerHTML =
-        '<h3 class="panel-h3">Tu código de familia</h3>' +
+        '<h3 class="panel-h3">Your family code</h3>' +
         '<p class="codigo-familia">' + U.esc(codigo || "—") + '</p>' +
-        '<p class="nota">Cuando crees la cuenta de un chico con este código, su ' +
-        'progreso te aparece acá abajo. Él no puede ver el tuyo, y vos no podés ' +
-        'modificar el suyo — solo leerlo. Eso es a propósito: si el adulto pudiera ' +
-        'editar los resultados, los datos dejarían de servir para decidir qué ' +
-        'trabajar.</p>' +
-        '<h3 class="panel-h3">Crear una cuenta</h3>' +
+        '<p class="nota">When you create a child account with this code, their ' +
+        'progress will appear below. They cannot see yours, and you cannot ' +
+        'change theirs — only view it. This is intentional: if adults could ' +
+        'edit results, the data would no longer help decide what to ' +
+        'practice.</p>' +
+        '<h3 class="panel-h3">Create an account</h3>' +
         '<div class="crear-cuenta">' +
-          '<input class="entrada" id="nu" placeholder="usuario (sin espacios)" ' +
+          '<input class="entrada" id="nu" placeholder="username (no spaces)" ' +
             'autocapitalize="none" autocorrect="off" maxlength="20">' +
-          '<input class="entrada" id="nn" placeholder="nombre visible" maxlength="14">' +
-          '<input class="entrada" id="nc" placeholder="contraseña (6+)" maxlength="40">' +
+          '<input class="entrada" id="nn" placeholder="display name" maxlength="14">' +
+          '<input class="entrada" id="nc" placeholder="password (6+)" maxlength="40">' +
           '<label class="ajuste"><input type="checkbox" id="nv" checked> ' +
-            'Vincular a mi código para poder ver su progreso</label>' +
+            'Link to my code so I can see their progress</label>' +
           '<p class="error" id="nerr" hidden></p>' +
         '</div>' +
         '<div class="acc" id="accCrear"></div>' +
-        '<h3 class="panel-h3">Chicos a tu cargo</h3>' +
-        '<div id="chicos"><p class="nota">Cargando…</p></div>';
+        '<h3 class="panel-h3">Children in your care</h3>' +
+        '<div id="chicos"><p class="nota">Loading…</p></div>';
 
       var nerr = cuerpo.querySelector("#nerr");
       cuerpo.querySelector("#accCrear").appendChild(
-        J.ui.boton("Crear cuenta", "btn-primario", function () {
+        J.ui.boton("Create account", "btn-primario", function () {
           var b = this;
           var u = cuerpo.querySelector("#nu").value.trim();
           var n = cuerpo.querySelector("#nn").value.trim();
@@ -1260,24 +1259,24 @@
           nerr.hidden = true;
 
           if (!confirm(
-            "Vas a crear la cuenta \"" + u + "\".\n\n" +
-            "IMPORTANTE: al crearla, esta sesión pasa a ser la del chico. " +
-            "Después vas a tener que volver a entrar con tu usuario.\n\n" +
-            "Si el chico no es de tu familia, pedile permiso al padre o madre antes.\n\n" +
-            "¿Continuar?")) return;
+            "You are about to create the account \"" + u + "\".\n\n" +
+            "IMPORTANT: after creating it, this session will belong to the child. " +
+            "You will need to sign in again with your own username.\n\n" +
+            "If the child is not in your family, get permission from their parent first.\n\n" +
+            "Continue?")) return;
 
-          b.disabled = true; b.textContent = "Creando…";
+          b.disabled = true; b.textContent = "Creating…";
           N.Auth.crear(u, c, n || u, v ? codigo : null).then(function (r) {
             if (r.ok) {
               Alm.olvidar();
-              alert("Cuenta creada.\n\nUsuario: " + u + "\nContraseña: " + c +
-                    "\n\nAnotala. Ahora estás dentro de esa cuenta: armá el avatar " +
-                    "y después salí para volver a la tuya.");
+              alert("Account created.\n\nUsername: " + u + "\nPassword: " + c +
+                    "\n\nWrite it down. You are now signed into that account: set up the avatar " +
+                    "and then log out to return to your own account.");
               return irA("avatar");
             }
             nerr.textContent = ERRORES[r.error] || r.error;
             nerr.hidden = false;
-            b.disabled = false; b.textContent = "Crear cuenta";
+            b.disabled = false; b.textContent = "Create account";
           });
         }));
 
@@ -1285,7 +1284,7 @@
         var cont = cuerpo.querySelector("#chicos");
         if (!cont) return;
         if (!lista.length) {
-          cont.innerHTML = '<p class="nota">Todavía no hay ninguno vinculado.</p>';
+          cont.innerHTML = '<p class="nota">No children are linked yet.</p>';
           return;
         }
         cont.innerHTML = '<div class="jug-lista">' + lista.map(function (x) {
@@ -1297,9 +1296,9 @@
           return '<div class="jug">' +
             '<span class="jug-av">' + N.Avatar.svg(d.jugador && d.jugador.avatar, 42) + '</span>' +
             '<span class="jug-info"><b>' + U.esc(x.nombre || x.usuario) + '</b>' +
-            '<em>' + (d.esmeraldas || 0) + ' esmeraldas · ' + dom + ' de ' + pal +
-            ' palabras dominadas' +
-            (x.actualizado ? ' · ' + new Date(x.actualizado).toLocaleDateString() : "") +
+            '<em>' + (d.esmeraldas || 0) + ' gems · ' + dom + ' of ' + pal +
+            ' mastered words' +
+            (x.actualizado ? ' · ' + new Date(x.actualizado).toLocaleDateString("en-US") : "") +
             '</em></span></div>';
         }).join("") + '</div>';
       });
@@ -1315,16 +1314,16 @@
 
       cuerpo.innerHTML =
         '<div class="tarjetas">' +
-          tarjeta("Esmeraldas", e.esmeraldas, "ganadas en total: " + e.esmeraldasGanadasTotal) +
-          tarjeta("Racha", e.racha.dias + " días", "último día: " + (e.racha.ultimoDia || "—")) +
-          tarjeta("Hoy", sesHoy.length + " niveles",
-                  sesHoy.reduce(function (s, x) { return s + (x.esmeraldas || 0); }, 0) + " esmeraldas") +
-          tarjeta("Ritmo practicado",
+          tarjeta("Gems", e.esmeraldas, "earned in total: " + e.esmeraldasGanadasTotal) +
+          tarjeta("Streak", e.racha.dias + " days", "last played: " + (e.racha.ultimoDia || "—")) +
+          tarjeta("Today", sesHoy.length + " levels",
+                  sesHoy.reduce(function (s, x) { return s + (x.esmeraldas || 0); }, 0) + " gems") +
+          tarjeta("Practice pace",
                   (e.destrezas["record-ppm"] ? e.destrezas["record-ppm"].mejor : "—") + " ppm",
-                  "ritmo de aparición; no es fluidez escolar") +
+                  "display rate; not a fluency score") +
         '</div>' +
         (e.diagnostico.hecho ?
-          '<h3 class="panel-h3">Diagnóstico histórico</h3>' +
+          '<h3 class="panel-h3">Previous diagnostic</h3>' +
           '<div class="diag-tabla">' +
             DIAG.map(function (d) {
               var x = diag[d.id];
@@ -1333,14 +1332,14 @@
               return '<div class="diag-fila"><span>' + U.esc(d.tit) + '</span>' +
                 '<span class="diag-pct sem-' + col + '">' + (pct === null ? "—" : pct + "%") + '</span></div>';
             }).join("") + '</div>'
-          : '<p class="nota">El diagnóstico anterior no está registrado. Ver los chequeos nuevos en Ruta y aprendizaje.</p>') +
-        '<h3 class="panel-h3">Vocabulario que tuvo que traducir</h3>' +
+          : '<p class="nota">The previous diagnostic is not recorded. See new check-ins in Learning plan.</p>') +
+        '<h3 class="panel-h3">Words translated</h3>' +
         (trad.length ?
-          '<p class="nota">Consignas donde pidió traducción; su uso por sí solo no demuestra una dificultad de vocabulario.</p>' +
+          '<p class="nota">Directions translated. Using a translation by itself does not show a vocabulary difficulty.</p>' +
           '<ul class="lista-simple">' + trad.slice(-12).reverse().map(function (t) {
             return '<li>' + U.esc(t.texto.slice(0, 90)) + '</li>';
           }).join("") + '</ul>'
-          : '<p class="nota">Todavía no usó la traducción.</p>');
+          : '<p class="nota">No translations used yet.</p>');
     }
 
     function tarjeta(t, v, s) {
@@ -1351,13 +1350,13 @@
 
     function destrezas(e) {
       var ids = Object.keys(e.destrezas).filter(function (k) { return k !== "record-ppm"; });
-      if (!ids.length) return cuerpo.innerHTML = '<p class="nota">Todavía no hay datos.</p>';
+      if (!ids.length) return cuerpo.innerHTML = '<p class="nota">No data yet.</p>';
       ids.sort(function (a, b) {
         var A = Pro.resumenDestreza(a), B = Pro.resumenDestreza(b);
         return (A.pct === null ? 999 : A.pct) - (B.pct === null ? 999 : B.pct);
       });
       cuerpo.innerHTML =
-        '<p class="nota">Ordenado de peor a mejor: lo de arriba es donde hay que trabajar.</p>' +
+        '<p class="nota">Ordenado de peor a mejor: lo de arriba es donde hay que practice.</p>' +
         '<div class="destrezas">' + ids.map(function (id) {
           var r = Pro.resumenDestreza(id);
           var col = r.pct === null ? "" : r.pct >= 80 ? "verde" : r.pct >= 50 ? "amarillo" : "rojo";
@@ -1372,24 +1371,24 @@
 
     function palabras(e) {
       var todas = Object.keys(e.palabras);
-      if (!todas.length) return cuerpo.innerHTML = '<p class="nota">Todavía no hay palabras.</p>';
+      if (!todas.length) return cuerpo.innerHTML = '<p class="nota">No words yet.</p>';
       var dominadas = Pro.dominadas();
       var cuesta = Pro.paraRepasar(30);
       cuerpo.innerHTML =
-        '<h3 class="panel-h3">Le cuestan (' + cuesta.length + ')</h3>' +
+        '<h3 class="panel-h3">Needs more practice (' + cuesta.length + ')</h3>' +
         '<div class="chips">' + cuesta.map(function (p) {
           var w = e.palabras[p];
           return '<span class="chip chip-' + (w.ultima || "rojo") + '" data-p="' + U.esc(p) + '">' +
             U.esc(p) + '</span>';
         }).join("") + '</div>' +
-        '<h3 class="panel-h3">Lectura observada en varios días (' + dominadas.length + ')</h3>' +
+        '<h3 class="panel-h3">Lectura observada en varios days (' + dominadas.length + ')</h3>' +
         '<div class="chips">' + dominadas.map(function (p) {
           return '<span class="chip chip-verde">' + U.esc(p) + '</span>';
         }).join("") + '</div>' +
-        '<p class="nota">Tocá una palabra que le costó para corregir el semáforo si vos la escuchaste bien.</p>';
+        '<p class="nota">Tap a word he struggled with to correct the result if you heard him say it correctly.</p>';
       cuerpo.querySelectorAll(".chips .chip[data-p]").forEach(function (c) {
         c.addEventListener("click", function () {
-          if (!confirm('¿Marcar "' + c.dataset.p + '" como bien dicha?')) return;
+          if (!confirm('Mark "' + c.dataset.p + '" as correct?')) return;
           Pro.registrarPalabra(c.dataset.p, "verde", null, "correccion-historica");
           pintarTab("palabras");
         });
@@ -1398,16 +1397,16 @@
 
     function premios(e) {
       cuerpo.innerHTML =
-        '<h3 class="panel-h3">Premios disponibles</h3>' +
+        '<h3 class="panel-h3">Available rewards</h3>' +
         '<div class="premios-edit" id="pe"></div>' +
         '<div class="acc" id="accPremio"></div>' +
-        '<h3 class="panel-h3">Canjes pedidos</h3>' +
+        '<h3 class="panel-h3">Reward requests</h3>' +
         (e.canjes.length ?
           '<ul class="lista-simple">' + e.canjes.slice().reverse().map(function (c, i) {
-            return '<li>' + new Date(c.t).toLocaleDateString() + ' — ' + U.esc(c.premio) +
-              ' (' + c.costo + ') ' + (c.entregado ? "✓ entregado" : "· pendiente") + '</li>';
+            return '<li>' + new Date(c.t).toLocaleDateString("en-US") + ' — ' + U.esc(c.premio) +
+              ' (' + c.costo + ') ' + (c.entregado ? "✓ delivered" : "· pending") + '</li>';
           }).join("") + '</ul>'
-          : '<p class="nota">Ninguno todavía.</p>');
+          : '<p class="nota">None yet.</p>');
 
       var pe = cuerpo.querySelector("#pe");
       e.premios.forEach(function (p, i) {
@@ -1418,7 +1417,7 @@
           '<input class="entrada entrada-num" type="number" value="' + p.costo + '" data-c="costo">';
         var bq = document.createElement("button");
         bq.className = "btn btn-fantasma";
-        bq.textContent = "Quitar";
+        bq.textContent = "Remove";
         bq.addEventListener("click", function () {
           var e2 = Alm.leer(); e2.premios.splice(i, 1); Alm.guardar(); pintarTab("premios");
         });
@@ -1435,10 +1434,10 @@
       });
 
       cuerpo.querySelector("#accPremio").appendChild(
-        J.ui.boton("+ Agregar premio", "btn-suave", function () {
-          var nom = prompt("Nombre del premio:");
+        J.ui.boton("+ Add reward", "btn-suave", function () {
+          var nom = prompt("Reward name:");
           if (!nom) return;
-          var c = parseInt(prompt("¿Cuántas esmeraldas cuesta?", "100"), 10);
+          var c = parseInt(prompt("How many gems does it cost?", "100"), 10);
           if (!c) return;
           var e2 = Alm.leer();
           e2.premios.push({ id: "r" + Date.now(), nombre: nom, costo: c, emoji: "🎁" });
@@ -1447,54 +1446,64 @@
     }
 
     function ajustes(e) {
+      var voces = Voz.listaVoces(), vozActual = Voz.vozPreferida();
       cuerpo.innerHTML =
         '<div class="ajustes">' +
           '<label class="ajuste"><input type="checkbox" id="aVoz"' +
-            (e.ajustes.voz ? " checked" : "") + '> Voz encendida</label>' +
+            (e.ajustes.voz ? " checked" : "") + '> Speech enabled</label>' +
           '<label class="ajuste"><input type="checkbox" id="aAdulto"' +
             (e.ajustes.modoAdulto ? " checked" : "") +
-            '> Modo adulto: yo marco la pronunciación (más preciso que el micrófono)</label>' +
+            '> Adult scoring: I check pronunciation (more reliable than the microphone)</label>' +
         '</div>' +
-        '<h3 class="panel-h3">Estado técnico</h3>' +
+        '<h3 class="panel-h3">Speech voice</h3>' +
+        '<p class="nota">Natural English voices sound best. Available voices depend on this device.</p>' +
+        '<label>Choose an English voice <select id="aSpeechVoice">' +
+          (voces.length ? voces.map(function (v) { return '<option value="' + U.esc(v.name) + '"' + (v.name === vozActual ? ' selected' : '') + '>' + U.esc(v.name) + ' (' + U.esc(v.lang) + ')</option>'; }).join("") : '<option value="">No English voice found</option>') +
+        '</select></label><div id="aVoicePreview" class="acc"></div>' +
+        '<h3 class="panel-h3">Device status</h3>' +
         '<ul class="lista-simple">' +
-          '<li>Micrófono: ' + (Voz.hayMicrofono ? "disponible" : "NO disponible") + '</li>' +
-          '<li>Voz en inglés: ' + (Voz.hayVozInglesa() ? "sí" : "NO") +
-            (Voz.hayVozInglesa() && !Voz.esUS() ? " — <b>no es americana</b>, instalá English (United States)" : "") + '</li>' +
-          '<li>Voces: ' + U.esc(Voz.vocesDisponibles().join(", ") || "ninguna") + '</li>' +
-          '<li>Sincronización en la nube: ' + (Alm.esPrueba()
-            ? "<b>apagada — estás en MODO PRUEBA</b>"
-            : Alm.hayNube() ? "activa" : "no configurada") + '</li>' +
+          '<li>Microphone: ' + (Voz.hayMicrofono ? "available" : "not available") + '</li>' +
+          '<li>English voice: ' + (Voz.hayVozInglesa() ? "available" : "not available") +
+            (Voz.hayVozInglesa() && !Voz.esUS() ? " — <b>not US English; install English (United States)</b>" : "") + '</li>' +
+          '<li>Cloud sync: ' + (Alm.esPrueba()
+            ? "<b>off — TEST MODE</b>"
+            : Alm.hayNube() ? "on" : "not configured") + '</li>' +
         '</ul>' +
-        '<h3 class="panel-h3">Datos</h3>' +
-        '<div class="acc" id="accDatos"></div>';
+        '<h3 class="panel-h3">Data</h3>' +
+        '<div class="acc" id="accData"></div>';
 
       cuerpo.querySelector("#aVoz").addEventListener("change", function () {
         var e2 = Alm.leer(); e2.ajustes.voz = this.checked; Alm.guardar();
       });
+      cuerpo.querySelector("#aSpeechVoice").addEventListener("change", function () { Voz.seleccionarVoz(this.value); });
+      cuerpo.querySelector("#aVoicePreview").appendChild(J.ui.boton("▶ Preview voice", "btn-suave", function () {
+        var e2 = Alm.leer(); e2.ajustes.voz = true; Alm.guardar(); cuerpo.querySelector("#aVoz").checked = true;
+        Voz.decir("Hi, Gaby! Let's read, solve, and explore together.", { rate: 0.93, pitch: 1.02 });
+      }));
       cuerpo.querySelector("#aAdulto").addEventListener("change", function () {
         var e2 = Alm.leer(); e2.ajustes.modoAdulto = this.checked; Alm.guardar();
       });
 
-      var accD = cuerpo.querySelector("#accDatos");
-      accD.appendChild(J.ui.boton("Descargar progreso", "btn-suave", function () {
+      var accD = cuerpo.querySelector("#accData");
+      accD.appendChild(J.ui.boton("Download progress backup", "btn-suave", function () {
         var blob = new Blob([Alm.exportar()], { type: "application/json" });
         var a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "progreso-gabriel-" + U.hoy() + ".json";
         a.click();
       }));
-      accD.appendChild(J.ui.boton("Rehacer diagnóstico", "btn-suave", function () {
-        if (!confirm("¿Volver a hacer el diagnóstico?")) return;
+      accD.appendChild(J.ui.boton("Take the diagnostic again", "btn-suave", function () {
+        if (!confirm("Take the diagnostic again? Previous results will be kept.")) return;
         global.APRENDIZAJE.create(Alm.leer(), Alm.guardar).start("revision");
         irA("introDiag");
       }));
-      accD.appendChild(J.ui.boton("Borrar todo", "btn-fantasma", function () {
-        if (!confirm("¿Borrar TODO el progreso? No se puede deshacer.")) return;
+      accD.appendChild(J.ui.boton("Delete all progress", "btn-fantasma", function () {
+        if (!confirm("Delete ALL progress? This cannot be undone.")) return;
         Alm.reiniciar(); irA("casa");
       }));
       if (Alm.modo() === "cuenta") {
-        accD.appendChild(J.ui.boton("Cerrar sesión", "btn-fantasma", function () {
-          if (!confirm("¿Cerrar la sesión y volver a la pantalla de entrada?")) return;
+        accD.appendChild(J.ui.boton("Log out", "btn-fantasma", function () {
+          if (!confirm("Log out and return to the sign-in screen?")) return;
           N.Auth.salir().then(function () {
             Alm.olvidar();
             irA("entrar");
@@ -1515,13 +1524,13 @@
     var b = document.createElement("div");
     b.className = "banner-prueba";
     b.innerHTML =
-      '<span class="bp-tag">MODO PRUEBA</span>' +
-      '<span class="bp-txt">Nada de esto se guarda en el progreso de Gabriel</span>';
+      '<span class="bp-tag">TEST MODE</span>' +
+      '<span class="bp-txt">Progress will not be saved</span>';
     var x = document.createElement("button");
     x.className = "bp-btn";
-    x.textContent = "Borrar y salir";
+    x.textContent = "Delete and exit";
     x.addEventListener("click", function () {
-      if (!confirm("¿Borrar la partida de prueba y volver al juego real?")) return;
+      if (!confirm("Delete the test game and return to the live game?")) return;
       Alm.borrarPrueba();
       location.href = location.pathname;
     });
@@ -1538,7 +1547,7 @@
     if (m === "local") return rutear();          // un jugador, sin cuenta
     if (m !== "cuenta") return irA("bienvenida"); // primera vez: que elija
 
-    app.innerHTML = '<p class="cargando">Cargando…</p>';
+    app.innerHTML = '<p class="cargando">Loading…</p>';
     N.Auth.restaurar().then(function () {
       if (!N.Auth.haySesion()) return irA("entrar");
       Alm.adoptarRemoto();   // si otro aparato tiene más avance, se toma ese

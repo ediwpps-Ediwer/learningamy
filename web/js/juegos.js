@@ -119,7 +119,7 @@
       var b = document.createElement("button");
       b.className = "btn-es";
       b.type = "button";
-      b.setAttribute("aria-label", "Ver en español");
+      b.setAttribute("aria-label", "Show Spanish hint");
       b.innerHTML = '<span>ES</span>';
       var abierto = false, globo = null;
       b.addEventListener("click", function () {
@@ -145,7 +145,7 @@
       var b = document.createElement("button");
       b.className = "btn-oir";
       b.type = "button";
-      b.setAttribute("aria-label", "Escuchar");
+      b.setAttribute("aria-label", "Listen");
       b.innerHTML = '<svg viewBox="0 0 16 16" width="20" height="20" shape-rendering="crispEdges">' +
         '<rect x="2" y="6" width="3" height="4" fill="currentColor"/>' +
         '<path d="M5 6 L9 3 L9 13 L5 10 Z" fill="currentColor"/>' +
@@ -196,10 +196,10 @@
       el.innerHTML =
         '<div class="fin">' +
           (medalla ? '<div class="fin-estrellas">' + medalla + '</div>' : '') +
-          '<div class="fin-emeralds">+' + datos.esmeraldas + ' <span>esmeraldas</span></div>' +
+          '<div class="fin-emeralds">+' + datos.esmeraldas + ' <span>gems</span></div>' +
           '<div class="fin-barra"><div class="fin-relleno" style="width:0%"></div></div>' +
-          '<p class="fin-pct">' + datos.aciertos + ' de ' + datos.total + '  ·  ' + pct + '%</p>' +
-          (mejorRacha >= 3 ? '<p class="fin-racha">🔥 Mejor racha: ' + mejorRacha + ' seguidas</p>' : '') +
+          '<p class="fin-pct">' + datos.aciertos + ' of ' + datos.total + '  ·  ' + pct + '%</p>' +
+          (mejorRacha >= 3 ? '<p class="fin-racha">🔥 Best streak: ' + mejorRacha + ' in a row</p>' : '') +
           (datos.extra ? '<p class="fin-extra">' + U.esc(datos.extra) + '</p>' : '') +
           '<div class="fin-compa">' + Compa.svg(pct >= 70 ? "fiesta" : "normal", 68) + '</div>' +
           '<div class="fin-acc"></div>' +
@@ -216,12 +216,12 @@
       if (datos.esmeraldas > 0) setTimeout(function () { Part.estallar(caja, 18); }, 250);
 
       var acc = el.querySelector(".fin-acc");
-      acc.appendChild(ui.boton("Seguir", "btn-primario", alSalir));
+      acc.appendChild(ui.boton("Keep going", "btn-primario", alSalir));
     }
   };
 
   /* ==========================================================================
-     1 · LECTURA DE PALABRAS  (micrófono, semáforo, palabras por minuto)
+     1 · LECTURA DE PALABRAS  (micrófono, semáforo, words per minute)
      ======================================================================== */
 
   var MIN_PPM = 5, MAX_PPM = 200;
@@ -236,8 +236,8 @@
       var palabras = cfg.items || [];
       var modo = cfg.modo || "practica";   // "practica" | "carrera"
       var m = ui.marco(el, modo === "carrera" ? "Speed Run" : "Word Reading",
-        modo === "carrera" ? "Elegí la lista y el ritmo"
-                           : "Leé la palabra en voz alta");
+        modo === "carrera" ? "Choose a word list and pace"
+                           : "Read the word aloud");
 
       if (modo === "carrera" && Voz.hayMicrofono) return carrera();
       if (cfg.adulto || N.Almacen.leer().ajustes.modoAdulto || !Voz.hayMicrofono) return practicaAdulto();
@@ -265,13 +265,13 @@
 
           var estado = document.createElement("p");
           estado.className = "estado";
-          estado.textContent = "Tocá el micrófono y leé la palabra";
+          estado.textContent = "Tap the microphone and read the word";
           m.cuerpo.appendChild(estado);
 
           m.pie.innerHTML = "";
           var bMic = ui.boton("🎤 Read it", "btn-primario btn-mic", function () {
             bMic.disabled = true;
-            estado.textContent = "Escuchando…";
+            estado.textContent = "Listening…";
             estado.className = "estado escuchando";
             var t0 = Date.now();
             Voz.escuchar({ tiempoMax: 6000 }).then(function (oido) {
@@ -281,7 +281,7 @@
               // dos intentos antes de marcar rojo
               if (r.color === "rojo" && intento < 2) {
                 estado.className = "estado";
-                estado.textContent = "No se entendió. Probá otra vez.";
+                estado.textContent = "I could not hear that. Try again.";
                 bMic.disabled = false;
                 return;
               }
@@ -290,14 +290,14 @@
           });
           m.pie.appendChild(bMic);
 
-          var bNo = ui.boton("No me escuchó", "btn-suave", function () {
+          var bNo = ui.boton("The mic did not hear me", "btn-suave", function () {
             intento = 0;
             estado.className = "estado";
-            estado.textContent = "Dale, otra vez. Acercate al micrófono.";
+            estado.textContent = "Try again. Move closer to the microphone.";
             bMic.disabled = false;
           });
           m.pie.appendChild(bNo);
-          m.pie.appendChild(ui.boton("Saltar", "btn-fantasma", function () {
+          m.pie.appendChild(ui.boton("Skip", "btn-fantasma", function () {
             aplicar(w, { color: "rojo", razon: "Saltada", oido: "" }, 0);
           }));
 
@@ -310,7 +310,7 @@
             if (r.color === "verde") aciertos++;
 
             estado.className = "estado sem-" + r.color;
-            estado.textContent = r.razon + (r.oido ? '  (se oyó: "' + r.oido + '")' : "");
+            estado.textContent = r.razon + (r.oido ? '  (heard: "' + r.oido + '")' : "");
             tarjeta.classList.add("sem-borde-" + r.color);
             m.pie.innerHTML = "";
             var b = ui.boton("Next", "btn-primario", function () {
@@ -318,7 +318,7 @@
             });
             m.pie.appendChild(b);
             if (r.color !== "verde") {
-              m.pie.appendChild(ui.boton("🔊 Oír bien", "btn-suave", function () {
+              m.pie.appendChild(ui.boton("🔊 Hear it again", "btn-suave", function () {
                 Voz.decir(w.s || w.p, { rate: 0.6 });
               }));
             }
@@ -347,11 +347,11 @@
           m.cuerpo.appendChild(tarjeta);
           var nota = document.createElement("p");
           nota.className = "estado";
-          nota.textContent = "Gabriel lee en voz alta. Papá marca cómo salió.";
+          nota.textContent = "Gaby reads aloud. A parent marks how it went.";
           m.cuerpo.appendChild(nota);
 
           m.pie.innerHTML = "";
-          [["verde", "Bien"], ["amarillo", "Casi"], ["rojo", "No pudo"]].forEach(function (par) {
+          [["verde", "Correct"], ["amarillo", "Almost"], ["rojo", "Not yet"]].forEach(function (par) {
             m.pie.appendChild(ui.boton(par[1], "btn-sem btn-" + par[0], function () {
               var r = { color: par[0], razon: "Marcado por el adulto", oido: "" };
               resultados.push({ w: w, r: r, ms: 0 });
@@ -376,7 +376,7 @@
 
       /* --- modo carrera: las palabras aparecen A UN RITMO ELEGIDO ---------
          Antes era una grilla y 60 segundos libres. Esto es mejor para lo que
-         le hace falta: se elige una velocidad en palabras por minuto, las
+         le hace falta: se elige una velocidad en words per minute, las
          palabras aparecen a ese ritmo, y él las va diciendo a medida que
          salen. Marcar el ritmo es como se entrena fluidez de verdad — el
          objetivo deja de ser "leer rápido" y pasa a ser "seguir el pulso",
@@ -397,8 +397,8 @@
           var cab = document.createElement("div");
           cab.className = "vel-cab";
           cab.innerHTML =
-            '<h3 class="vel-tit">¿Qué palabras?</h3>' +
-            '<p class="vel-sub">Todas salen de sus hojas de la escuela.</p>';
+            '<h3 class="vel-tit">Which words?</h3>' +
+            '<p class="vel-sub">All lists come from school worksheets.</p>';
           m.cuerpo.appendChild(cab);
 
           var caja = document.createElement("div");
@@ -407,7 +407,7 @@
             var b = document.createElement("button");
             b.className = "conjunto" + (c.destacado ? " conjunto-prio" : "");
             b.innerHTML =
-              (c.destacado ? '<span class="conjunto-tag">Lo más útil</span>' : "") +
+              (c.destacado ? '<span class="conjunto-tag">Recommended</span>' : "") +
               '<span class="conjunto-nom">' + U.esc(c.nombre) + '</span>' +
               '<span class="conjunto-fuente">' + U.esc(c.fuente) + '</span>' +
               '<span class="conjunto-n">' + c.items.length + ' palabras</span>';
@@ -432,27 +432,27 @@
           var caja = document.createElement("div");
           caja.className = "vel-panel";
           caja.innerHTML =
-            '<h3 class="vel-tit">¿A qué velocidad?</h3>' +
-            '<p class="vel-sub">Las palabras van a ir apareciendo solas. ' +
-            'Decilas en voz alta apenas las veas.</p>' +
+            '<h3 class="vel-tit">Choose a speed</h3>' +
+            '<p class="vel-sub">Words will appear on their own. ' +
+            'Read each one aloud as soon as you see it.</p>' +
 
             '<div class="vel-dial">' +
-              '<button class="vel-paso" id="menos" aria-label="Más lento">−</button>' +
+              '<button class="vel-paso" id="menos" aria-label="Slower">−</button>' +
               '<div class="vel-centro">' +
                 '<input class="vel-input" id="ppm" type="number" inputmode="numeric" ' +
                   'min="' + MIN_PPM + '" max="' + MAX_PPM + '" step="1" value="' + elegida + '" ' +
-                  'aria-label="Palabras por minuto">' +
-                '<span class="vel-unidad">palabras por minuto</span>' +
+                  'aria-label="Words per minute">' +
+                '<span class="vel-unidad">words per minute</span>' +
                 '<span class="vel-cada" id="cada"></span>' +
               '</div>' +
-              '<button class="vel-paso" id="mas" aria-label="Más rápido">+</button>' +
+              '<button class="vel-paso" id="mas" aria-label="Faster">+</button>' +
             '</div>' +
 
             '<div class="vel-chips" id="chips"></div>' +
-            (rec ? '<p class="vel-rec">Tu récord: <b>' + rec + '</b> ppm</p>' : "") +
-            '<p class="vel-ref">Estas son palabras sueltas e inventadas, no un texto ' +
-            'seguido: el número no se compara con los promedios de fluidez de la ' +
-            'escuela, que se miden leyendo cuentos.</p>';
+            (rec ? '<p class="vel-rec">Your best: <b>' + rec + '</b> WPM</p>' : "") +
+            '<p class="vel-ref">These are individual made-up words, not connected text. ' +
+            'Do not compare this number with school fluency averages, which are ' +
+            'measured by reading stories.</p>';
           m.cuerpo.appendChild(caja);
 
           var inp = caja.querySelector("#ppm");
@@ -467,7 +467,7 @@
           function refrescar() {
             var v = limpiar(inp.value);
             var seg = 60 / v;
-            cada.textContent = "1 cada " + (seg >= 1 ? seg.toFixed(seg < 10 ? 1 : 0) + " segundos"
+            cada.textContent = "1 every " + (seg >= 1 ? seg.toFixed(seg < 10 ? 1 : 0) + " seconds"
                                                      : Math.round(seg * 1000) + " ms");
             caja.querySelectorAll(".vel-chip").forEach(function (c) {
               c.classList.toggle("sel", +c.dataset.v === v);
@@ -666,7 +666,7 @@
           function avisarSinMic() {
             var a = document.createElement("p");
             a.className = "aviso-sinmic";
-            a.textContent = "Sin micrófono: seguí el ritmo igual, al final marcás cuáles dijo bien.";
+            a.textContent = "No microphone? Keep the pace, then mark the words read correctly.";
             escenario.insertBefore(a, escenario.firstChild);
           }
 
@@ -689,7 +689,7 @@
             m.pie.innerHTML = "";
             var caja = document.createElement("div");
             caja.className = "marcar";
-            caja.innerHTML = '<p class="marcar-tit">Tocá las que dijo bien</p>';
+            caja.innerHTML = '<p class="marcar-tit">Tap the words read correctly</p>';
             var grilla = document.createElement("div");
             grilla.className = "marcar-grilla";
             mostradas.forEach(function (en) {
@@ -705,7 +705,7 @@
             });
             caja.appendChild(grilla);
             m.cuerpo.appendChild(caja);
-            m.pie.appendChild(ui.boton("Listo", "btn-primario", function () {
+            m.pie.appendChild(ui.boton("Done", "btn-primario", function () {
               mostradas.forEach(function (en) {
                 en.resuelto = false;
                 cerrar(en, en.marcada ? "verde" : "nodijo");
@@ -730,15 +730,14 @@
 
             if (nuevoRecord) Snd.nivel();
 
-            var extra = "A " + ppm + " palabras por minuto dijiste bien " + verdes +
-                        " de " + total +
-                        (nuevoRecord ? "  ·  ¡NUEVO RÉCORD!" :
-                         logrado ? "  ·  ¡Lograste esta velocidad!" :
-                                   "  ·  Probá una velocidad más lenta");
+            var extra = "You read " + verdes + " of " + total + " words at " + ppm + " WPM" +
+                        (nuevoRecord ? "  ·  NEW RECORD!" :
+                         logrado ? "  ·  You reached this speed!" :
+                                   "  ·  Try a slower speed");
 
             var resultados = mostradas.map(function (en) {
               return { w: en.w, r: { color: en.color === "nodijo" ? "rojo" : en.color,
-                                     razon: en.color === "nodijo" ? "No llegó a decirla" : "",
+                                     razon: en.color === "nodijo" ? "Not attempted" : "",
                                      oido: "" }, ms: 0 };
             });
 
@@ -765,18 +764,18 @@
           var caja = document.createElement("div");
           caja.className = "repaso";
           caja.innerHTML =
-            '<p class="repaso-tit">' + (it.r.color === "amarillo" ? "Casi la tenías" : "Escuchá esta") + '</p>' +
+            '<p class="repaso-tit">' + (it.r.color === "amarillo" ? "Almost got it" : "Listen to this one") + '</p>' +
             '<div class="palabra-grande sem-borde-' + it.r.color + '">' + U.esc(it.w.p) + '</div>' +
             '<p class="repaso-nota">' + U.esc(it.r.razon) + '</p>';
           m.cuerpo.appendChild(caja);
 
           var acc = document.createElement("div");
           acc.className = "fila-acc";
-          acc.appendChild(ui.boton("🔊 Oír", "btn-suave", function () {
+          acc.appendChild(ui.boton("🔊 Listen", "btn-suave", function () {
             Voz.decir(it.w.s || it.w.p, { rate: 0.6 });
           }));
           if (it.r.color === "rojo") {
-            acc.appendChild(ui.boton("🔤 Letra por letra", "btn-suave", function () {
+            acc.appendChild(ui.boton("🔤 Letter by letter", "btn-suave", function () {
               Voz.deletrear(it.w.p);
             }));
           }
@@ -805,7 +804,7 @@
       var palabras = (cfg.items || []).slice(0, cfg.cuantas || 6);
       var lado = cfg.lado || (palabras.length > 5 ? 10 : 8);
       var diagonales = !!cfg.diagonales;
-      var m = ui.marco(el, "Word Search", "Encontrá las palabras", palabras.length);
+      var m = ui.marco(el, "Word Search", "Find the words", palabras.length);
 
       var rejilla = generar(palabras.map(function (w) { return w.p.toUpperCase(); }), lado, diagonales);
       var encontradas = {}, gan = 0, t0 = Date.now();
@@ -911,7 +910,7 @@
         soltar(txt);
       });
 
-      m.pie.appendChild(ui.boton("Rendirse", "btn-fantasma", cerrar));
+      m.pie.appendChild(ui.boton("Give up", "btn-fantasma", cerrar));
 
       function cerrar() {
         clearInterval(tick);
@@ -919,7 +918,7 @@
         var n = Object.keys(encontradas).length;
         if (n === palabras.length) gan += Eco.dar(Eco.PAGOS.nivelCompleto, "sopa");
         ui.fin(el, { esmeraldas: gan, aciertos: n, total: palabras.length,
-                     extra: "Tiempo: " + seg + " segundos" },
+                     extra: "Tiempo: " + seg + " seconds" },
           function () { fin({ aciertos: n, total: palabras.length, esmeraldas: gan, segundos: seg }); });
       }
 
@@ -971,7 +970,7 @@
 
     iniciar: function (el, cfg, fin) {
       var palabras = cfg.items || [];
-      var m = ui.marco(el, "Spelling", "Escuchá la palabra y armala", palabras.length);
+      var m = ui.marco(el, "Spelling", "Listen to the word and spell it", palabras.length);
       var i = 0, aciertos = 0, gan = 0, resultados = [];
 
       function pintar() {
@@ -1033,12 +1032,12 @@
           });
         }
 
-        m.pie.appendChild(ui.boton("⌫ Borrar", "btn-suave", function () {
+        m.pie.appendChild(ui.boton("⌫ Clear", "btn-suave", function () {
           var u = construido.pop();
           if (u) u.boton.disabled = false;
           repintarHuecos();
         }));
-        m.pie.appendChild(ui.boton("💡 Ayuda", "btn-suave", function () {
+        m.pie.appendChild(ui.boton("💡 Hint", "btn-suave", function () {
           if (construido.length >= meta.length) return;
           ayudas++;
           var necesaria = meta[construido.length];
@@ -1064,7 +1063,7 @@
           m.pie.innerHTML = "";
           var msg = document.createElement("p");
           msg.className = "estado sem-" + color;
-          msg.textContent = color === "verde" ? "¡Perfecto!"
+          msg.textContent = color === "verde" ? "Perfect!"
             : color === "amarillo" ? "Bien, pero con ayuda"
             : "Se escribe: " + w.p.toUpperCase();
           m.cuerpo.appendChild(msg);
@@ -1074,7 +1073,7 @@
             Voz.decir(w.s || w.p, { rate: 0.6 }).then(function () {
               if (color === "rojo") return Voz.deletrear(w.p);
             });
-            m.pie.appendChild(ui.boton("🔤 Letra por letra", "btn-suave", function () {
+            m.pie.appendChild(ui.boton("🔤 Letter by letter", "btn-suave", function () {
               Voz.deletrear(w.p);
             }));
           }
@@ -1086,7 +1085,7 @@
         var malas = resultados.filter(function (r) { return r.color !== "verde"; })
                               .map(function (r) { return r.w.p; });
         ui.fin(el, { esmeraldas: gan, aciertos: aciertos, total: palabras.length,
-          extra: malas.length ? "Para practicar con menos ayuda: " + malas.join(", ") : "¡Todas bien sin ayuda!" },
+          extra: malas.length ? "Practice these with less help: " + malas.join(", ") : "All correct without help!" },
           function () { fin({ aciertos: aciertos, total: palabras.length, esmeraldas: gan }); });
       }
       pintar();
@@ -1105,7 +1104,7 @@
 
     iniciar: function (el, cfg, fin) {
       var c = cfg.cuento || D.CUENTOS[0];
-      var m = ui.marco(el, c.titulo, "Leé el cuento", c.preguntas.length);
+      var m = ui.marco(el, c.titulo, "Read the story", c.preguntas.length);
       var escena = 0, gan = 0;
 
       function pintarEscena() {
@@ -1141,7 +1140,7 @@
         m.pie.appendChild(ui.boton(escena === c.escenas.length - 1 ? "Challenger →" : "Next →",
           "btn-primario", function () { escena++; pintarEscena(); }));
         if (escena > 0) {
-          m.pie.appendChild(ui.boton("← Atrás", "btn-fantasma",
+          m.pie.appendChild(ui.boton("← Back", "btn-fantasma",
             function () { escena--; pintarEscena(); }));
         }
       }
@@ -1210,7 +1209,7 @@
     iniciar: function (el, cfg, fin) {
       var lista = cfg.items || generarSet(cfg.cuantas || 8, cfg.max || 20);
       var pedirEstrategia = cfg.estrategia !== false;
-      var m = ui.marco(el, "Math Facts", "Resolvé la ecuación", lista.length);
+      var m = ui.marco(el, "Math Facts", "Solve the equation", lista.length);
       var i = 0, aciertos = 0, gan = 0, t0;
 
       function generarSet(n, max) {
@@ -1252,7 +1251,7 @@
         if (e.hueco !== "resultado") {
           var aviso = document.createElement("p");
           aviso.className = "aviso-consigna";
-          aviso.textContent = "Ojo: el hueco no está al final";
+          aviso.textContent = "Look: the missing number is not at the end";
           m.cuerpo.appendChild(aviso);
         }
 
@@ -1268,7 +1267,7 @@
         });
         m.cuerpo.appendChild(ops);
 
-        m.pie.appendChild(ui.boton("💡 Estrategias", "btn-suave", function () {
+        m.pie.appendChild(ui.boton("💡 Strategies", "btn-suave", function () {
           mostrarEstrategias(e, correcta);
         }));
       }
@@ -1299,7 +1298,7 @@
 
         m.pie.innerHTML = "";
         if (!ok || pedirEstrategia) {
-          m.pie.appendChild(ui.boton("Ver estrategias", "btn-suave",
+          m.pie.appendChild(ui.boton("Show strategies", "btn-suave",
             function () { mostrarEstrategias(e, correcta); }));
         }
         m.pie.appendChild(ui.boton("Next", "btn-primario", function () { i++; pintar(); }));
@@ -1310,7 +1309,7 @@
         m.cuerpo.innerHTML = "";
         var h = document.createElement("p");
         h.className = "estrategia-tit";
-        h.textContent = "Hay varias formas de llegar a " + correcta;
+        h.textContent = "There are several ways to make " + correcta;
         m.cuerpo.appendChild(h);
 
         var caja = document.createElement("div");
@@ -1318,13 +1317,13 @@
         var a = e.hueco === "primero" ? correcta : e.a;
         var b = e.hueco === "segundo" ? correcta : e.b;
 
-        caja.appendChild(tarjetaEstr("Ten Frame", "Diez y sobran",
+        caja.appendChild(tarjetaEstr("Ten Frame", "Make ten, then add the rest",
           Arte.tenFrame(e.op === "+" ? a + b : e.r)));
-        caja.appendChild(tarjetaEstr("Number Bond", "Partir el número",
+        caja.appendChild(tarjetaEstr("Number Bond", "Break apart the number",
           Arte.numberBond(e.op === "+" ? a + b : e.a, a, b)));
-        caja.appendChild(tarjetaEstr("Number Line", "Saltar por la recta",
+        caja.appendChild(tarjetaEstr("Number Line", "Jump along the number line",
           Arte.rectaNumerica(a, b, e.op)));
-        caja.appendChild(tarjetaEstr("Count On", "Contar hacia adelante",
+        caja.appendChild(tarjetaEstr("Count On", "Count on",
           Arte.contarAdelante(a, b)));
         m.cuerpo.appendChild(caja);
 
@@ -1359,7 +1358,7 @@
 
     iniciar: function (el, cfg, fin) {
       var lista = cfg.items || U.tomar(D.PROBLEMAS, cfg.cuantas || 4);
-      var m = ui.marco(el, "Word Problems", "Leé y resolvé paso a paso", lista.length);
+      var m = ui.marco(el, "Word Problems", "Read and solve step by step", lista.length);
       var i = 0, aciertos = 0, gan = 0;
 
       function pintar() {
@@ -1432,7 +1431,7 @@
               if (!ok) {
                 var pista = document.createElement("p");
                 pista.className = "pista";
-                pista.textContent = 'La pista está en "' + p.clave + '"';
+                pista.textContent = 'The clue is in "' + p.clave + '"';
                 q.appendChild(pista);
                 Voz.decir(p.clave, { rate: 0.6 });
               }
@@ -1499,8 +1498,8 @@
       var modo = cfg.modo || "identificar";   // identificar | contar | tienda
       var rondas = cfg.rondas || 6;
       var m = ui.marco(el, "Money",
-        modo === "identificar" ? "¿Cuánto vale?" :
-        modo === "contar" ? "Contá el dinero" : "Comprá en la tienda");
+        modo === "identificar" ? "What is it worth?" :
+        modo === "contar" ? "Count the money" : "Shop for an item");
       var i = 0, aciertos = 0, gan = 0;
 
       function centavos(v) {
@@ -1522,7 +1521,7 @@
         vis.innerHTML = Arte.dinero(c, 140);
         m.cuerpo.appendChild(vis);
         m.cuerpo.appendChild(ui.consigna("How much is this " + c.nombre + "?",
-          "¿Cuánto vale este " + c.nombre + "?", monedas.destreza));
+          "How much is this " + c.nombre + "?", monedas.destreza));
 
         var ops = U.mezclar(U.tomar(D.DINERO.filter(function (x) { return x.id !== c.id; }), 3)
                     .concat([c]));
@@ -1567,7 +1566,7 @@
         });
         m.cuerpo.appendChild(vis);
         m.cuerpo.appendChild(ui.consigna("How much money is here?",
-          "¿Cuánto dinero hay acá?", monedas.destreza));
+          "How much money is here?", monedas.destreza));
 
         var ops = U.mezclar([total, total + 5, total - 5, total + 10]
           .filter(function (v, k, a) { return v > 0 && a.indexOf(v) === k; }));
@@ -1602,7 +1601,7 @@
         m.cuerpo.appendChild(vis);
         m.cuerpo.appendChild(ui.consigna(
           "You buy the " + art.p + " with " + centavos(pagoCon) + ". How much change?",
-          "Comprás " + art.es + " con " + centavos(pagoCon) + ". ¿Cuánto vuelto?",
+          "You buy " + art.es + " for " + centavos(pagoCon) + ". How much change do you get?",
           monedas.destreza));
 
         var ops = U.mezclar([vuelto, vuelto + 5, vuelto - 5, vuelto + 10]
@@ -1751,7 +1750,7 @@
 
     iniciar: function (el, cfg, fin) {
       var rondas = cfg.rondas || 6;
-      var m = ui.marco(el, "Shapes", "Reconocé la forma", rondas);
+      var m = ui.marco(el, "Shapes", "Name the shape", rondas);
       var i = 0, aciertos = 0, gan = 0;
 
       function pintar() {

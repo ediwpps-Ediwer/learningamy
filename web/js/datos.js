@@ -34,18 +34,18 @@
      alfabético ni al azar, cada módulo agrupa un patrón. Sirve para armar
      niveles que ataquen el patrón, no solo palabras sueltas. */
   var MODULO_PATRON = {
-    1:  "Base: pronombres y palabras de una sílaba",
-    2:  "Floss rules (ll, ss, ff) · dígrafos sh/th/wh · -ing",
+    1:  "Base: pronouns and one-syllable words",
+    2:  "Floss rules (ll, ss, ff) · digraphs sh/th/wh · -ing",
     3:  "VCe (made, time, gave, page) · heart words buy/guy",
-    4:  "y como vocal (my, try, sky, why, baby, happy, city)",
-    5:  "Vocales largas en equipo: ee, ea, ai · -ed (tried, cried)",
-    6:  "igh (right, might, night, high) · ow largo (grow, slow, show)",
-    7:  "Vocales con r: ar (car, far, dark, part, start)",
-    8:  "Vocales con r: er, ir, ur, ear (bird, first, work, learn)",
-    9:  "oo (book, good, look, push, full) · contracciones",
-    10: "Dígrafos difíciles: augh/ough (laugh, thought) · wa (watch, wash)",
-    11: "Diptongos: ou/ow (house, mouse, down, round) · oi/oy (boy, voice)",
-    12: "Familia -ough (rough, tough, enough) · letras mudas (know, write, answer)"
+    4:  "Y as a vowel (my, try, sky, why, baby, happy, city)",
+    5:  "Long vowel teams: ee, ea, ai · -ed (tried, cried)",
+    6:  "igh (right, might, night, high) · long ow (grow, slow, show)",
+    7:  "R-controlled vowels: ar (car, far, dark, part, start)",
+    8:  "R-controlled vowels: er, ir, ur, ear (bird, first, work, learn)",
+    9:  "oo (book, good, look, push, full) · contractions",
+    10: "Tricky spellings: augh/ough (laugh, thought) · wa (watch, wash)",
+    11: "Diphthongs: ou/ow (house, mouse, down, round) · oi/oy (boy, voice)",
+    12: "The -ough family (rough, tough, enough) · silent letters (know, write, answer)"
   };
 
   var SIGHT = {

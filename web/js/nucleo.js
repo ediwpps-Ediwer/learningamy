@@ -480,13 +480,33 @@
     var preferida = null;
     var SR = global.SpeechRecognition || global.webkitSpeechRecognition;
 
+    function nombrePreferida() {
+      return Almacen.leer().ajustes.speechVoice || "";
+    }
+
+    function elegirNatural(todas) {
+      var guardada = nombrePreferida();
+      if (guardada) {
+        var elegida = todas.filter(function (v) { return v.name === guardada; })[0];
+        if (elegida) return elegida;
+      }
+      function rank(v) {
+        var n = v.name.toLowerCase(), score = 0;
+        if (/natural|neural|premium|enhanced|online/.test(n)) score += 100;
+        if (/aria|ava|jenny|samantha|zira|google us english|michelle/.test(n)) score += 30;
+        if (/en[-_]us/i.test(v.lang)) score += 10;
+        if (/compact|default|classic/.test(n)) score -= 20;
+        return score;
+      }
+      return todas.slice().sort(function (a, b) { return rank(b) - rank(a); })[0] || null;
+    }
+
     function cargarVoces() {
       if (!global.speechSynthesis) return;
       var todas = speechSynthesis.getVoices() || [];
       vocesEn = todas.filter(function (v) { return /^en/i.test(v.lang); });
-      // preferir en-US (está en Georgia); si no hay, la que sea en inglés
-      preferida = vocesEn.filter(function (v) { return /^en[-_]US/i.test(v.lang); })[0] ||
-                  vocesEn[0] || null;
+      preferida = elegirNatural(vocesEn.filter(function (v) { return /^en[-_]US/i.test(v.lang); })) ||
+                  elegirNatural(vocesEn);
     }
     if (global.speechSynthesis) {
       cargarVoces();
@@ -496,13 +516,14 @@
     function decir(texto, opciones) {
       opciones = opciones || {};
       if (!global.speechSynthesis || !Almacen.leer().ajustes.voz) return Promise.resolve();
+      cargarVoces();
       return new Promise(function (listo) {
         try {
           speechSynthesis.cancel();
           var u = new SpeechSynthesisUtterance(String(texto));
           u.lang = opciones.lang || "en-US";
-          u.rate = opciones.rate != null ? opciones.rate : 0.85;
-          u.pitch = opciones.pitch != null ? opciones.pitch : 1;
+          u.rate = Math.max(0.78, Math.min(1.12, opciones.rate != null ? opciones.rate : 0.93));
+          u.pitch = opciones.pitch != null ? opciones.pitch : 1.02;
           if (preferida && !opciones.lang) u.voice = preferida;
           u.onend = function () { listo(); };
           u.onerror = function () { listo(); };
@@ -617,7 +638,13 @@
       hayMicrofono: hayMicrofono,
       hayVozInglesa: function () { return vocesEn.length > 0; },
       esUS: function () { return !!preferida && /US/i.test(preferida.lang); },
-      vocesDisponibles: function () { return vocesEn.map(function (v) { return v.name + " (" + v.lang + ")"; }); }
+      vocesDisponibles: function () { return vocesEn.map(function (v) { return v.name + " (" + v.lang + ")"; }); },
+      listaVoces: function () { cargarVoces(); return vocesEn.map(function (v) { return { name: v.name, lang: v.lang }; }); },
+      vozPreferida: function () { cargarVoces(); return preferida ? preferida.name : ""; },
+      seleccionarVoz: function (name) {
+        var e = Almacen.leer(); e.ajustes.speechVoice = String(name || ""); Almacen.guardar(); cargarVoces();
+      },
+      detener: function () { if (global.speechSynthesis) speechSynthesis.cancel(); }
     };
   })();
 
@@ -679,7 +706,7 @@
 
       if (!oido || oido.error) {
         return { color: "rojo", oido: "", razon: oido && oido.error === "no-speech"
-          ? "No se escuchó nada" : "No se pudo escuchar", reintentable: true };
+          ? "Nothing was heard" : "Could not hear the word", reintentable: true };
       }
 
       var alts = (oido.alternativas || []).map(function (a) {
@@ -687,7 +714,7 @@
       }).filter(function (a) { return a.t; });
 
       if (!alts.length) {
-        return { color: "rojo", oido: "", razon: "No se escuchó nada", reintentable: true };
+        return { color: "rojo", oido: "", razon: "Nothing was heard", reintentable: true };
       }
 
       // 1) coincidencia exacta con la palabra o con una transcripción aceptada
@@ -696,7 +723,7 @@
         var conf = exacta.c;
         if (conf !== null && conf < 0.55) {
           return { color: "amarillo", oido: exacta.t,
-                   razon: "Se entendió, pero bajito o poco claro" };
+                   razon: "Heard, but too quiet or unclear" };
         }
         return { color: "verde", oido: exacta.t, razon: "Correcta" };
       }
@@ -706,14 +733,14 @@
       var cercaEs = alts.filter(function (a) { return normalizarEs(a.t) === metaEs; })[0];
       if (cercaEs) {
         return { color: "amarillo", oido: cercaEs.t,
-                 razon: "Casi: es un sonido que el español no tiene" };
+                 razon: "Almost: this sound is not used in English" };
       }
 
       // 3) par mínimo conocido (vocal corta vs larga) -> amarillo
       var par = alts.filter(function (a) { return esParMinimo(meta, a.t); })[0];
       if (par) {
         return { color: "amarillo", oido: par.t,
-                 razon: "Confundió la vocal: " + meta + " / " + par.t };
+                 razon: "Vowel mix-up: " + meta + " / " + par.t };
       }
 
       // 4) muy parecida en letras -> amarillo
@@ -727,7 +754,7 @@
         return { color: "amarillo", oido: mejor, razon: "Muy cerca" };
       }
 
-      return { color: "rojo", oido: alts[0].t, razon: "Se oyó otra palabra" };
+      return { color: "rojo", oido: alts[0].t, razon: "A different word was heard" };
     }
 
     return { evaluar: evaluar, limpiar: limpiar, distancia: distancia };
@@ -773,7 +800,7 @@
       }
 
       return '<svg viewBox="0 0 20 28" width="' + tam + '" height="' + (tam * 1.4) +
-        '" shape-rendering="crispEdges" role="img" aria-label="Personaje">' +
+        '" shape-rendering="crispEdges" role="img" aria-label="Character">' +
         // pelo
         '<rect x="4" y="3" width="12" height="4" fill="' + pelo + '"/>' +
         '<rect x="3" y="5" width="2" height="6" fill="' + pelo + '"/>' +
