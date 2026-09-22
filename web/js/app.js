@@ -57,6 +57,7 @@
   var actual = null;
 
   function irA(nombre, datos) {
+    if (global.AVENTURA) global.AVENTURA.cancel();
     actual = nombre;
     app.innerHTML = "";
     app.scrollTop = 0;
@@ -290,7 +291,7 @@
         e2.jugador.nombre = (el.querySelector("#nom").value || "Player").trim();
         if (!e2.jugador.creado) e2.jugador.creado = Date.now();
         Alm.guardar();
-        irA(e2.diagnostico.hecho ? "casa" : "introDiag");
+        irA(global.AVENTURA.needsInitial() ? "introDiag" : "casa");
       }));
   };
 
@@ -476,7 +477,7 @@
     function sesionesHoy(e) {
       var h = hoy();
       return (e.sesiones || []).filter(function (s) {
-        return new Date(s.t).toISOString().slice(0, 10) === h;
+        return U.fecha(s.t) === h;
       });
     }
 
@@ -491,7 +492,7 @@
         if (destrezaSolo && k.indexOf(destrezaSolo) !== 0) return;
         (e.destrezas[k].historial || []).forEach(function (x) {
           if (x.semaforo === color &&
-              new Date(x.t).toISOString().slice(0, 10) === h) n++;
+              U.fecha(x.t) === h) n++;
         });
       });
       return n;
@@ -650,7 +651,7 @@
         '<button class="tienda-btn" id="btienda">' + esmeraldaSvg(18) +
           ' Prize Shop · ' + e.esmeraldas + '</button>' +
       '</section>';
-    pintarRetos(el.querySelector(".pantalla"));
+    global.AVENTURA.home(el.querySelector(".pantalla"));
     el.querySelectorAll(".mundo").forEach(function (b) {
       b.addEventListener("click", function () { irA("mundo", { mundo: b.dataset.m }); });
     });
@@ -752,14 +753,14 @@
     if (mundo === "reading") {
       lista.push({
         id: "vce-semana", tit: "Spelling: VCe", sub: "made · safe · time · like",
-        etiqueta: "Esta semana en clase", prioridad: true,
+        etiqueta: "Material escolar · repaso", prioridad: true,
         juego: "spelling", cfg: { items: D.MODULO3.spellingSemana }
       });
       lista.push({
         id: "sight-modulo-" + D.MODULO_ACTUAL,
         tit: "Sight Words " + D.MODULO_ACTUAL,
         sub: D.MODULO_PATRON[D.MODULO_ACTUAL],
-        etiqueta: "Módulo de ahora",
+        etiqueta: "Módulo disponible",
         juego: "lecturaPalabras",
         cfg: function () {
           return { items: U.tomar(D.SIGHT[D.MODULO_ACTUAL], 10), modo: "practica" };
@@ -803,7 +804,7 @@
     } else {
       lista.push({
         id: "graficas-semana", tit: "Bar & Picture Graphs", sub: "Leer datos",
-        etiqueta: "Esta semana en clase", prioridad: true,
+        etiqueta: "Material escolar · repaso", prioridad: true,
         juego: "graficas", cfg: { cuantas: 5 }
       });
       lista.push({
@@ -832,7 +833,7 @@
       });
       lista.push({
         id: "formas", tit: "Shapes", sub: "2D y 3D",
-        etiqueta: "Lo más flojo en i-Ready", juego: "formas", cfg: { rondas: 8 }
+        etiqueta: "Practice shapes", juego: "formas", cfg: { rondas: 8 }
       });
     }
     return lista;
@@ -899,11 +900,11 @@
       var b = document.createElement("button");
       b.className = "nivel" + (mod === D.MODULO_ACTUAL ? " nivel-prio" : "");
       b.innerHTML =
-        (mod === D.MODULO_ACTUAL ? '<span class="nivel-tag">Módulo de ahora</span>' : "") +
+        (mod === D.MODULO_ACTUAL ? '<span class="nivel-tag">Módulo disponible</span>' : "") +
         '<span class="nivel-tit">Module ' + mod + '</span>' +
         '<span class="nivel-sub">' + U.esc(D.MODULO_PATRON[mod] || "") + '</span>' +
         '<span class="mod-barra"><span class="mod-relleno" style="width:' + pct + '%"></span></span>' +
-        '<span class="mod-n">' + dom + ' / ' + palabras.length + ' dominadas</span>';
+        '<span class="mod-n">' + dom + ' / ' + palabras.length + ' observadas en varios días</span>';
       b.addEventListener("click", function () {
         irA("jugar", { mundo: "reading", nivel: {
           id: "sight-modulo-" + mod,
@@ -1028,7 +1029,8 @@
         '<h2 class="tit">Panel de papá</h2>' +
         '<nav class="panel-tabs">' +
           '<button data-t="resumen" class="tab activo">Resumen</button>' +
-          '<button data-t="destrezas" class="tab">Destrezas</button>' +
+          '<button data-t="aprendizaje" class="tab">Ruta y aprendizaje</button>' +
+          '<button data-t="destrezas" class="tab">Historial</button>' +
           '<button data-t="palabras" class="tab">Palabras</button>' +
           '<button data-t="premios" class="tab">Premios</button>' +
           '<button data-t="jugadores" class="tab">Jugadores</button>' +
@@ -1053,6 +1055,7 @@
 
     function pintarTab(cual) {
       var e = Alm.leer();
+      if (cual === "aprendizaje") return global.AVENTURA.panel(cuerpo);
       if (cual === "resumen") return resumen(e);
       if (cual === "destrezas") return destrezas(e);
       if (cual === "palabras") return palabras(e);
@@ -1181,7 +1184,7 @@
     function resumen(e) {
       var hoy = U.hoy();
       var sesHoy = e.sesiones.filter(function (s) {
-        return new Date(s.t).toISOString().slice(0, 10) === hoy;
+        return U.fecha(s.t) === hoy;
       });
       var diag = e.diagnostico.resultados;
       var trad = e.traduccionesUsadas.slice(-40);
@@ -1192,12 +1195,12 @@
           tarjeta("Racha", e.racha.dias + " días", "último día: " + (e.racha.ultimoDia || "—")) +
           tarjeta("Hoy", sesHoy.length + " niveles",
                   sesHoy.reduce(function (s, x) { return s + (x.esmeraldas || 0); }, 0) + " esmeraldas") +
-          tarjeta("Récord lectura",
+          tarjeta("Ritmo practicado",
                   (e.destrezas["record-ppm"] ? e.destrezas["record-ppm"].mejor : "—") + " ppm",
-                  "palabras por minuto") +
+                  "ritmo de aparición; no es fluidez escolar") +
         '</div>' +
         (e.diagnostico.hecho ?
-          '<h3 class="panel-h3">Diagnóstico</h3>' +
+          '<h3 class="panel-h3">Diagnóstico histórico</h3>' +
           '<div class="diag-tabla">' +
             DIAG.map(function (d) {
               var x = diag[d.id];
@@ -1206,10 +1209,10 @@
               return '<div class="diag-fila"><span>' + U.esc(d.tit) + '</span>' +
                 '<span class="diag-pct sem-' + col + '">' + (pct === null ? "—" : pct + "%") + '</span></div>';
             }).join("") + '</div>'
-          : '<p class="nota">El diagnóstico todavía no se hizo.</p>') +
+          : '<p class="nota">El diagnóstico anterior no está registrado. Ver los chequeos nuevos en Ruta y aprendizaje.</p>') +
         '<h3 class="panel-h3">Vocabulario que tuvo que traducir</h3>' +
         (trad.length ?
-          '<p class="nota">Estas son las consignas donde tocó el botón ES. Dice qué inglés todavía no tiene.</p>' +
+          '<p class="nota">Consignas donde pidió traducción; su uso por sí solo no demuestra una dificultad de vocabulario.</p>' +
           '<ul class="lista-simple">' + trad.slice(-12).reverse().map(function (t) {
             return '<li>' + U.esc(t.texto.slice(0, 90)) + '</li>';
           }).join("") + '</ul>'
@@ -1255,7 +1258,7 @@
           return '<span class="chip chip-' + (w.ultima || "rojo") + '" data-p="' + U.esc(p) + '">' +
             U.esc(p) + '</span>';
         }).join("") + '</div>' +
-        '<h3 class="panel-h3">Ya las domina (' + dominadas.length + ')</h3>' +
+        '<h3 class="panel-h3">Lectura observada en varios días (' + dominadas.length + ')</h3>' +
         '<div class="chips">' + dominadas.map(function (p) {
           return '<span class="chip chip-verde">' + U.esc(p) + '</span>';
         }).join("") + '</div>' +
@@ -1263,7 +1266,7 @@
       cuerpo.querySelectorAll(".chips .chip[data-p]").forEach(function (c) {
         c.addEventListener("click", function () {
           if (!confirm('¿Marcar "' + c.dataset.p + '" como bien dicha?')) return;
-          Pro.registrarPalabra(c.dataset.p, "verde", null);
+          Pro.registrarPalabra(c.dataset.p, "verde", null, "correccion-historica");
           pintarTab("palabras");
         });
       });
@@ -1358,9 +1361,8 @@
       }));
       accD.appendChild(J.ui.boton("Rehacer diagnóstico", "btn-suave", function () {
         if (!confirm("¿Volver a hacer el diagnóstico?")) return;
-        var e2 = Alm.leer();
-        e2.diagnostico = { hecho: false, fecha: null, resultados: {} };
-        Alm.guardar(); irA("introDiag");
+        global.APRENDIZAJE.create(Alm.leer(), Alm.guardar).start("revision");
+        irA("introDiag");
       }));
       accD.appendChild(J.ui.boton("Borrar todo", "btn-fantasma", function () {
         if (!confirm("¿Borrar TODO el progreso? No se puede deshacer.")) return;
@@ -1424,9 +1426,11 @@
   function rutear() {
     var e = Alm.leer();
     if (!e.jugador.avatar) irA("avatar");
-    else if (!e.diagnostico.hecho) irA("introDiag");
+    else if (global.AVENTURA.needsInitial()) irA("introDiag");
     else irA("casa");
   }
+
+  global.AVENTURA.install(pantallas, irA);
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", arrancar);

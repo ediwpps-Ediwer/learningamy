@@ -231,6 +231,7 @@
     }
 
     function guardar() {
+      enMemoria.guardadoEn = Date.now();
       try { localStorage.setItem(llave(), JSON.stringify(enMemoria)); }
       catch (e) { /* modo privado: se sigue jugando en memoria */ }
       sincronizar();
@@ -253,7 +254,7 @@
 
     /* Al entrar: si la nube trae más avance que lo guardado en este aparato,
        se toma la nube. Así puede seguir en otra tablet donde quedó.
-       Se compara por esmeraldas ganadas en total, que solo sube. */
+       Se compara por fecha de guardado; esmeraldas solo como compatibilidad con datos antiguos. */
     function adoptarRemoto() {
       if (MODO_PRUEBA) return false;
       var f = Auth.fila();
@@ -262,7 +263,10 @@
       try { local = JSON.parse(localStorage.getItem(llave()) || "null"); } catch (e) {}
       var pesoRemoto = f.datos.esmeraldasGanadasTotal || 0;
       var pesoLocal = (local && local.esmeraldasGanadasTotal) || 0;
-      if (!local || pesoRemoto >= pesoLocal) {
+      var fechaRemota = f.datos.guardadoEn || Date.parse(f.actualizado || "") || 0;
+      var fechaLocal = local && local.guardadoEn || 0;
+      var tomarRemoto = (fechaRemota || fechaLocal) ? fechaRemota > fechaLocal : pesoRemoto >= pesoLocal;
+      if (!local || tomarRemoto) {
         enMemoria = f.datos;
         try { localStorage.setItem(llave(), JSON.stringify(enMemoria)); } catch (e) {}
         return true;
@@ -277,6 +281,17 @@
       reiniciar: function () { enMemoria = vacio(); guardar(); },
       olvidar: function () { enMemoria = null; },
       exportar: function () { return JSON.stringify(leer(), null, 2); },
+      respaldarAprendizaje: function () {
+        var key = llave() + ".antes-explorer-1";
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, JSON.stringify(leer()));
+          if (!localStorage.getItem(key)) throw new Error("No se pudo guardar el respaldo");
+        }
+      },
+      respaldoAprendizaje: function () { return localStorage.getItem(llave() + ".antes-explorer-1"); },
+      guardarImagenTarea: function (dataUrl) { try { localStorage.setItem(llave() + ".tarea-imagen", String(dataUrl || "")); return true; } catch (e) { return false; } },
+      leerImagenTarea: function () { try { return localStorage.getItem(llave() + ".tarea-imagen") || ""; } catch (e) { return ""; } },
+      borrarImagenTarea: function () { try { localStorage.removeItem(llave() + ".tarea-imagen"); } catch (e) {} },
       importar: function (txt) {
         try { enMemoria = JSON.parse(txt); guardar(); return true; }
         catch (e) { return false; }
@@ -297,7 +312,7 @@
         return true;
       },
       borrarPrueba: function () {
-        try { localStorage.removeItem("gaby.prueba"); } catch (e) {}
+        try { localStorage.removeItem("gaby.prueba"); localStorage.removeItem("gaby.prueba.antes-explorer-1"); } catch (e) {}
         enMemoria = null;
       }
     };
@@ -345,9 +360,10 @@
     /* racha diaria: premia volver, no jugar mucho de una */
     marcarDia: function () {
       var e = Almacen.leer();
-      var hoy = new Date().toISOString().slice(0, 10);
+      var hoy = Util.hoy();
       if (e.racha.ultimoDia === hoy) return false;
-      var ayer = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+      var fechaAyer = new Date(); fechaAyer.setDate(fechaAyer.getDate()-1);
+      var ayer = Util.fecha(fechaAyer);
       e.racha.dias = (e.racha.ultimoDia === ayer) ? e.racha.dias + 1 : 1;
       e.racha.ultimoDia = hoy;
       Almacen.guardar();
@@ -395,9 +411,13 @@
       Almacen.guardar();
     },
 
-    registrarPalabra: function (palabra, semaforo, ms) {
+    registrarPalabra: function (palabra, semaforo, ms, modalidad) {
       var e = Almacen.leer();
       var w = e.palabras[palabra] || { verde: 0, amarillo: 0, rojo: 0, ms: [], ultima: null };
+      modalidad = modalidad || "sin-clasificar";
+      w.observaciones = w.observaciones || [];
+      w.observaciones.push({ t: Date.now(), modalidad: modalidad, semaforo: semaforo, ms: ms });
+      if (w.observaciones.length > 100) w.observaciones.shift();
       w[semaforo] = (w[semaforo] || 0) + 1;
       w.ultima = semaforo;
       if (ms) { w.ms.push(ms); if (w.ms.length > 10) w.ms.shift(); }
@@ -421,7 +441,11 @@
       var e = Almacen.leer();
       return Object.keys(e.palabras).filter(function (p) {
         var w = e.palabras[p];
-        return w.verde >= 2 && w.ultima === "verde";
+        // Solo observación oral adulta, en días distintos. No es certificación escolar.
+        var oral = (w.observaciones || []).filter(function (x) { return x.modalidad === "oral-adulto"; });
+        if (!oral.length || oral[oral.length - 1].semaforo !== "verde") return false;
+        return new Set(oral.filter(function (x) { return x.semaforo === "verde"; })
+          .map(function (x) { return Util.fecha(x.t); })).size >= 3;
       });
     },
 
@@ -792,7 +816,11 @@
     tomar: function (arr, n) { return Util.mezclar(arr).slice(0, n); },
     azar: function (arr) { return arr[Math.floor(Math.random() * arr.length)]; },
     entero: function (min, max) { return min + Math.floor(Math.random() * (max - min + 1)); },
-    hoy: function () { return new Date().toISOString().slice(0, 10); },
+    fecha: function (t) {
+      var d = new Date(t);
+      return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    },
+    hoy: function () { return Util.fecha(Date.now()); },
     esc: function (s) {
       return String(s).replace(/[&<>"']/g, function (c) {
         return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];

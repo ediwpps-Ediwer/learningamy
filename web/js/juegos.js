@@ -240,7 +240,7 @@
                            : "Leé la palabra en voz alta");
 
       if (modo === "carrera" && Voz.hayMicrofono) return carrera();
-      if (cfg.adulto || !Voz.hayMicrofono) return practicaAdulto();
+      if (cfg.adulto || N.Almacen.leer().ajustes.modoAdulto || !Voz.hayMicrofono) return practicaAdulto();
       return practicaMic();
 
       /* --- modo práctica con micrófono: una a la vez, más preciso -------- */
@@ -303,7 +303,7 @@
 
           function aplicar(w, r, ms) {
             resultados.push({ w: w, r: r, ms: ms });
-            Pro.registrarPalabra(w.p, r.color, ms);
+            Pro.registrarPalabra(w.p, r.color, ms, "oral-automatico");
             Pro.registrar(lecturaPalabras.destreza, r.color === "verde",
               { ms: ms, item: w.p, semaforo: r.color });
             gan += m.premiar(tarjeta, r.color, Eco.PAGOS[r.color]);
@@ -355,7 +355,7 @@
             m.pie.appendChild(ui.boton(par[1], "btn-sem btn-" + par[0], function () {
               var r = { color: par[0], razon: "Marcado por el adulto", oido: "" };
               resultados.push({ w: w, r: r, ms: 0 });
-              Pro.registrarPalabra(w.p, par[0], 0);
+              Pro.registrarPalabra(w.p, par[0], 0, "oral-adulto");
               Pro.registrar(lecturaPalabras.destreza, par[0] === "verde",
                 { item: w.p, semaforo: par[0] });
               gan += m.premiar(tarjeta, par[0], Eco.PAGOS[par[0]]);
@@ -624,12 +624,12 @@
               entrada.chip.classList.add("cerrado", color === "nodijo" ? "chip-nodijo" : "sem-fondo-" + color);
             }
             if (color === "nodijo") {
-              Pro.registrarPalabra(entrada.w.p, "rojo", null);
+              Pro.registrarPalabra(entrada.w.p, "sin-evidencia", null, "oral-automatico");
               return;
             }
             dichas++;
             hDicho.textContent = dichas;
-            Pro.registrarPalabra(entrada.w.p, color, null);
+            Pro.registrarPalabra(entrada.w.p, color, null, "oral-automatico");
             if (color === "verde") {
               verdes++;
               gan += m.premiar(entrada.chip, "verde", Eco.PAGOS.verde);
@@ -888,7 +888,7 @@
           Voz.decir(hit.p, { rate: 0.7 });
           gan += m.premiar(chip || tabla, "verde");
           Pro.registrar(sopaLetras.destreza, true, { item: hit.p });
-          Pro.registrarPalabra(hit.p, "verde", null);
+          Pro.registrarPalabra(hit.p, "verde", null, "reconocimiento-visual");
           sel = [];
           if (Object.keys(encontradas).length === palabras.length) cerrar();
         } else {
@@ -1052,7 +1052,7 @@
           var color = texto !== meta ? "rojo" : (ayudas === 0 ? "verde" : "amarillo");
           resultados.push({ w: w, color: color, escrito: texto, ayudas: ayudas });
           Pro.registrar(spelling.destreza, color === "verde", { item: w.p, semaforo: color });
-          Pro.registrarPalabra(w.p, color, null);
+          Pro.registrarPalabra(w.p, color, null, "letras-moviles");
           gan += m.premiar(huecos, color, Eco.PAGOS[color]);
           if (color === "verde") aciertos++;
 
@@ -1083,10 +1083,10 @@
       }
 
       function cerrar() {
-        var malas = resultados.filter(function (r) { return r.color === "rojo"; })
+        var malas = resultados.filter(function (r) { return r.color !== "verde"; })
                               .map(function (r) { return r.w.p; });
         ui.fin(el, { esmeraldas: gan, aciertos: aciertos, total: palabras.length,
-          extra: malas.length ? "Para repasar: " + malas.join(", ") : "¡Todas bien!" },
+          extra: malas.length ? "Para practicar con menos ayuda: " + malas.join(", ") : "¡Todas bien sin ayuda!" },
           function () { fin({ aciertos: aciertos, total: palabras.length, esmeraldas: gan }); });
       }
       pintar();
