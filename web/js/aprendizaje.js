@@ -196,7 +196,9 @@
     function finishPractice(index) {var m=mission(),s=m.steps[index]; if(!s||s.done)return;s.done=true;save();}
     function setTask(task) {
       task=task||{};
-      a.task={id:"tarea-"+clock(),title:String(task.title||"Tarea del día").slice(0,100),subject:String(task.subject||"").slice(0,40),skill:SKILLS[task.skill]?task.skill:"",objective:String(task.objective||"").slice(0,180),notes:String(task.notes||"").slice(0,300),date:task.date||day(clock()),imageKey:task.imageKey||null};
+      var today=day(clock()),current=a.missions[today];
+      if(current&&!current.paid&&!current.steps.some(function(s){return s.done||s.cursor>0;}))delete a.missions[today];
+      a.task={id:"tarea-"+clock(),title:String(task.title||"Tarea del día").slice(0,100),subject:String(task.subject||"").slice(0,40),skill:SKILLS[task.skill]?task.skill:"",objective:String(task.objective||"").slice(0,180),notes:String(task.notes||"").slice(0,300),date:task.date||day(clock()),imageKey:task.imageKey||null,adaptation:task.adaptation||null};
       save(); return a.task;
     }
     function clearTask() { a.task=null; save(); }

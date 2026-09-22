@@ -143,7 +143,8 @@ function diagnostic(el){
 function mission(el){
   var E=engine(),m=E.mission();
   var body=shell(el,"Build your village","Four small steps. One new building. +20 emeralds.");
-  body.innerHTML='<p class="nota">'+(m.provisional?"Ruta provisional: el diagnóstico todavía tiene observaciones pendientes.":"Ruta basada en las observaciones guardadas.")+'</p>'+
+  var activeTask=m.task&&typeof m.task==="object"?m.task:null;
+  body.innerHTML=(activeTask&&activeTask.objective?'<article class="av-ai-card"><b>'+esc(activeTask.title)+'</b><p>'+esc(activeTask.objective)+'</p></article>':'')+'<p class="nota">'+(m.provisional?"Ruta provisional: el diagnóstico todavía tiene observaciones pendientes.":"Ruta basada en las observaciones guardadas.")+'</p>'+
     '<div class="av-village">'+(E.data.buildings.length?E.data.buildings.slice(-12).map(function(b){return '<span>'+({garden:"🌳",library:"🏠",bridge:"🌉"}[b.type])+'</span>';}).join(""):"🏕️")+'</div><div id="av-steps" class="av-steps"></div>';
   var names={recordar:"Remember",aprender:"Learn",resolver:"Solve",demostrar:"Show what you learned"},next=m.steps.findIndex(function(s){return !s.done;});
   m.steps.forEach(function(s,i){
@@ -162,8 +163,11 @@ function step(el,opts){
   var E=engine(),m=E.mission(),ix=opts.index,s=m.steps[ix];
   if(!s||s.done||ix!==m.steps.findIndex(function(x){return !x.done;}))return route("aventura");
   var spec=L.skills[s.skill],body=shell(el,spec.icon+" "+spec.en,s.phase==="aprender"?"Watch, practise, then try.":"Use what you know. You can ask for help.");
+  var adapt=m.task&&typeof m.task==="object"&&m.task.adaptation, adaptedStep=adapt&&adapt.steps.find(function(x){return x.phase===s.phase;}),guide=null;
+  if(adaptedStep){guide=document.createElement("p");guide.className="av-ai-card";guide.textContent=adaptedStep.instruction+" · "+adaptedStep.game;}
   if(s.phase==="aprender"||s.phase==="resolver"){
     body.innerHTML='<div class="av-lesson"><h3>Try a strategy</h3><p>'+esc(spec.ayuda)+'</p><p class="nota">'+esc(spec.es)+'</p></div><div id="av-practice"></div>';
+    if(guide)body.insertBefore(guide,body.firstChild);
     button(body,"🔊 Hear the strategy",function(){say(spec.ayuda);});
     var host=body.querySelector("#av-practice"),cfg,game;
     if(s.skill==="dictado"){game="spelling";cfg={items:s.questions.map(function(q){return {p:q.word};})};}
@@ -180,6 +184,7 @@ function step(el,opts){
       var p=document.createElement("p");p.className="nota";p.textContent="Práctica guiada con los juegos existentes. Completarla no certifica dominio; las comprobaciones se guardan por separado.";body.appendChild(p);return;
     }
   }
+  if(guide)body.appendChild(guide);
   var q=s.questions[s.cursor];
   drawQuestion(body,q,function(result,help,by,next,response){
     if(next)return route(s.done?"aventura":"pasoAventura",{index:ix});
@@ -189,7 +194,6 @@ function step(el,opts){
 function reducirFoto(file,done){
   var fr=new FileReader(); fr.onload=function(){var img=new Image();img.onload=function(){var max=1400,w=img.width,h=img.height;if(w>max){h=Math.round(h*max/w);w=max;}var c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);done(c.toDataURL("image/jpeg",.72));};img.src=fr.result;};fr.readAsDataURL(file);
 }
-function promptTarea(t){return "Adaptá esta tarea para una niña o niño que está aprendiendo a leer. Conservá el objetivo y proponé 3 pasos jugables, con lectura simple, apoyos graduados y una comprobación final. Datos: "+JSON.stringify(t);}
 function panel(el){
   var E=engine(),a=E.data;
   el.innerHTML='<h3 class="panel-h3">Ruta y aprendizaje</h3><p class="nota">Versión Explorer 1. Las comprobaciones nuevas se separan del historial anterior y de los premios. No equivalen a un puntaje escolar.</p>'+
@@ -207,7 +211,23 @@ function panel(el){
   var photo=N.Almacen.leerImagenTarea(); if(photo){var pv=el.querySelector("#av-photo-preview");pv.src=photo;pv.hidden=false;}
   el.querySelector("#av-photo").onchange=function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;reducirFoto(f,function(data){var pv=el.querySelector("#av-photo-preview");pv.src=data;pv.hidden=false;pv.dataset.data=data;el.querySelector("#av-task-status").textContent="Foto lista. Guardá la tarea para conectarla con la próxima misión.";});};
   button(el.querySelector(".av-task-upload"),"Guardar tarea y adaptar próxima misión",function(){var pv=el.querySelector("#av-photo-preview"),data=pv.dataset.data||photo;if(data)N.Almacen.guardarImagenTarea(data);var saved=L.setTask({title:el.querySelector("#av-task-title").value,subject:el.querySelector("#av-task-subject").value,skill:el.querySelector("#av-task-skill").value,notes:el.querySelector("#av-task-notes").value,imageKey:data?"local":null});el.querySelector("#av-task-status").textContent="Guardado. La próxima misión priorizará "+(saved.skill?L.skills[saved.skill].nombre:"la observación que falte")+" y conservará el objetivo de la tarea.";}, "btn-primario");
-  button(el.querySelector(".av-task-upload"),"Preparar tarea para IA",function(){var t=a.task||{};el.querySelector("#av-task-status").textContent="La foto y el objetivo están listos. Este paso copia una ficha breve para que la IA del adulto proponga pasos jugables; luego el juego los verifica con su nivel.";try{navigator.clipboard&&navigator.clipboard.writeText(promptTarea(t));}catch(e){}}, "btn-suave");
+  var aiBox=document.createElement("div");aiBox.id="av-ai-result";el.querySelector(".av-task-upload").appendChild(aiBox);
+  button(el.querySelector(".av-task-upload"),"Analizar tarea con IA",async function(ev){
+    var btn=ev.currentTarget,pv=el.querySelector("#av-photo-preview"),image=pv.dataset.data||photo;
+    if(!image){el.querySelector("#av-task-status").textContent="Primero sacá una foto o elegí una imagen.";return;}
+    L.setTask({title:el.querySelector("#av-task-title").value,subject:el.querySelector("#av-task-subject").value,skill:el.querySelector("#av-task-skill").value,notes:el.querySelector("#av-task-notes").value,imageKey:"local"});
+    if(image)N.Almacen.guardarImagenTarea(image);a=E.data;
+    btn.disabled=true;el.querySelector("#av-task-status").textContent="La IA está leyendo la tarea y comparándola con las observaciones del diagnóstico…";
+    try{
+      var diagnostic=Object.keys(L.skills).map(function(k){var x=E.summary(k);return {skill:k,level:x.referenceLevel,status:x.status};});
+      var response=await fetch("/api/adaptar-tarea",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:image,task:{title:el.querySelector("#av-task-title").value,subject:el.querySelector("#av-task-subject").value,skill:el.querySelector("#av-task-skill").value,notes:el.querySelector("#av-task-notes").value},diagnostic:diagnostic})});
+      var result=await response.json();if(!response.ok)throw new Error(result.message||result.error||"No se pudo analizar la tarea.");
+      var plan=result.adaptation;aiBox.innerHTML='<article class="av-ai-card"><h4>'+esc(plan.title)+'</h4><p><b>Objetivo:</b> '+esc(plan.objective)+'</p><p><b>Nivel de práctica provisional:</b> '+esc(String(plan.difficulty))+' · no es un puntaje escolar</p><ol>'+plan.steps.map(function(x){return '<li><b>'+esc(x.phase)+'</b>: '+esc(x.instruction)+' <span class="nota">('+esc(x.game)+')</span></li>';}).join("")+'</ol><p><b>Para comprobar transferencia:</b> '+plan.transfer.map(esc).join(" · ")+'</p><p class="nota"><b>Adulto:</b> '+esc(plan.adultCheck)+'</p>'+(plan.uncertain.length?'<p class="nota"><b>Revisar:</b> '+plan.uncertain.map(esc).join(" · ")+'</p>':'')+'</article>';
+      button(aiBox,"Usar esta adaptación en la próxima misión",function(){var current=a.task||{};L.setTask({title:plan.title,subject:plan.subject,skill:plan.skill,objective:plan.objective,notes:current.notes,imageKey:current.imageKey,adaptation:plan});aiBox.querySelector("[data-use]").disabled=true;el.querySelector("#av-task-status").textContent="Adaptación guardada. La próxima misión priorizará "+L.skills[plan.skill].nombre+". Verificá las dudas con la hoja original.";}, "btn-primario").setAttribute("data-use","");
+      el.querySelector("#av-task-status").textContent="Propuesta lista. Revisala con la hoja antes de usarla.";
+    }catch(err){el.querySelector("#av-task-status").textContent=err.message==="ai_not_configured"?"La función está publicada, pero falta guardar OPENAI_API_KEY como secreto en Netlify.":err.message||"No se pudo conectar con la IA.";}
+    finally{btn.disabled=false;}
+  }, "btn-suave");
   el.querySelector("#av-task").value=a.settings.task;
   el.querySelector("#av-read").value=a.settings.reading[0]||"";
   el.querySelector("#av-math").value=a.settings.math[0]||"";
