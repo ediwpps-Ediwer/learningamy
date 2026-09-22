@@ -3,7 +3,7 @@
    (todo menos el reconocimiento de voz, que necesita conexión en Android)
    ========================================================================== */
 
-var CACHE = "blockquest-explorer-3";
+var CACHE = "blockquest-explorer-4";
 
 var ARCHIVOS = [
   "./",
