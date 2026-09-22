@@ -29,6 +29,8 @@ function home(container){
   var acc=box.querySelector("#av-home-actions");
   if(due)button(acc,E.data.active?"Continue exploring →":due==="inicial"?"Explore what you know →":"Explorer check-in →",function(){route("introDiag");},"btn-primario btn-grande");
   button(acc,m.paid?"Visit your village →":m.steps.some(function(s){return s.done;})?"Continue today's mission →":"Today's mission →",function(){route("aventura");},due?"btn-suave":"btn-primario btn-grande");
+  button(acc,"🗺️ Explore Block Quest",function(){route("explorar");},"btn-suave");
+  button(acc,"🎒 Activity backpack",function(){route("mochila");},"btn-suave");
   if(!due){var p=document.createElement("p");p.className="nota";p.textContent="Next check-in · "+E.nextDate();box.appendChild(p);}
 }
 function intro(el){

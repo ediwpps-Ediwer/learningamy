@@ -869,6 +869,130 @@
     });
   };
 
+  /* ======================================================================
+     EXPLORAR — aventura táctil en un mapa de bloques 3D
+     Los edificios llevan al catálogo; cada actividad sigue usando el juego
+     y el guardado que ya existen.
+     ==================================================================== */
+
+  pantallas.explorar = function (el) {
+    var e = Alm.leer();
+    var places = [
+      { id: "reading", x: 24, y: 48, icon: "📚", title: "READING LIBRARY", detail: "Reading games" },
+      { id: "math", x: 76, y: 48, icon: "🧮", title: "MATH WORKSHOP", detail: "Math games" },
+      { id: "quest", x: 50, y: 18, icon: "🏁", title: "MISSION PORTAL", detail: "Guided mission" }
+    ];
+    el.innerHTML =
+      '<section class="pantalla av-world-screen">' +
+        '<div class="av-world-head"><button class="volver" id="av-world-back">← Home</button><span class="av-eyebrow">BLOCK QUEST · EXPLORER</span><button class="av-bag-shortcut" id="av-world-bag">🎒 Activities</button></div>' +
+        '<h2 class="tit">Explore Block Quest</h2><p class="sub">Walk through a small block world of gardens, platforms and buildings. Choose an activity whenever you like.</p>' +
+        '<div class="av-world-viewport" id="av-world" tabindex="0" role="application" aria-label="Block world. Use the arrow buttons to walk.">' +
+          '<div class="av-world-ground" aria-hidden="true"></div><div class="av-world-keyboard" aria-hidden="true">' +
+            [['ESC','1','2','3','4','5','6','7','8','9','0','⌫'],['TAB','Q','W','E','R','T','Y','U','I','O','P'],['CAPS','A','S','D','F','G','H','J','K','L'],['SHIFT','Z','X','C','V','B','N','M','↵'],['CTRL','☻','ALT','SPACE','ALT','←','↓','↑','→']].map(function(row){return '<div class="av-keyboard-row">'+row.map(function(key){return '<span class="av-world-key'+(key==='SPACE'?' av-key-space':'')+'">'+key+'</span>';}).join('')+'</div>';}).join('') +
+          '</div><div class="av-world-town" aria-hidden="true"><span class="av-world-house av-house-one">🏠</span><span class="av-world-house av-house-two">🏡</span><span class="av-world-garden">🌻 🌿 🌻</span></div><span class="av-world-bumper av-bumper-one" aria-hidden="true">🧱</span><span class="av-world-bumper av-bumper-two" aria-hidden="true">🟪</span><span class="av-world-bumper av-bumper-three" aria-hidden="true">🧱</span>' +
+          places.map(function (p) { return '<button class="av-world-place av-place-' + p.id + '" data-place="' + p.id + '" style="left:' + p.x + '%;top:' + p.y + '%" aria-label="' + p.title + '"><span class="av-place-icon">' + p.icon + '</span><strong>' + p.title + '</strong><small>' + p.detail + '</small><span class="av-place-action">Walk closer</span></button>'; }).join("") +
+          '<div class="av-world-player" id="av-world-player" style="left:50%;top:79%" aria-label="Your character">' + N.Avatar.svg(e.jugador.avatar, 58) + '<span class="av-player-shadow"></span></div>' +
+        '</div>' +
+        '<div class="av-world-footer"><p id="av-world-status" class="av-world-status" aria-live="polite">Walk to the Reading Library, Math Workshop or Mission Portal. · Explorá el mapa.</p>' +
+          '<div class="av-world-controls" role="group" aria-label="Movement controls"><button data-move="up" aria-label="Walk up">▲</button><button data-move="left" aria-label="Walk left">◀</button><button data-move="down" aria-label="Walk down">▼</button><button data-move="right" aria-label="Walk right">▶</button></div>' +
+        '</div><p class="nota">Tap the arrows to move, or use arrow keys. Choose Activities any time. · Podés volver o pausar cuando quieras.</p>' +
+      '</section>';
+    el.querySelector("#av-world-back").addEventListener("click", function () { irA("casa"); });
+    el.querySelector("#av-world-bag").addEventListener("click", function () { irA("mochila"); });
+    var scene = el.querySelector("#av-world"), player = el.querySelector("#av-world-player"), status = el.querySelector("#av-world-status");
+    var position = { x: 50, y: 79 }, held = { up: false, down: false, left: false, right: false };
+    var keyMap = { arrowup: "up", w: "up", arrowdown: "down", s: "down", arrowleft: "left", a: "left", arrowright: "right", d: "right" };
+    var speed = 18, frame = 0, lastFrame = 0, pressStart = {}, lastPointerTap = 0;
+    var vectors = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    function distance(p) { return Math.hypot(position.x - p.x, position.y - p.y); }
+    function refresh() {
+      player.style.left = position.x + "%"; player.style.top = position.y + "%";
+      var nearest = null, nearestDistance = Infinity;
+      places.forEach(function (p) {
+        var d = distance(p), b = scene.querySelector('[data-place="' + p.id + '"]');
+        b.classList.toggle("av-place-near", d < 19);
+        b.querySelector(".av-place-action").textContent = d < 19 ? "Enter →" : "Walk closer";
+        if (d < nearestDistance) { nearest = p; nearestDistance = d; }
+      });
+      status.textContent = nearestDistance < 19 ? "You are near " + nearest.title + ". Tap Enter to explore!" : "Walk to the Reading Library, Math Workshop or Mission Portal. · Explorá el mapa.";
+    }
+    function frameMove(time) {
+      if (!scene.isConnected) { frame = 0; return; }
+      var elapsed = Math.min((time - lastFrame) / 1000, 0.05); lastFrame = time;
+      var dx = (held.right ? 1 : 0) - (held.left ? 1 : 0), dy = (held.down ? 1 : 0) - (held.up ? 1 : 0);
+      var length = Math.hypot(dx, dy) || 1;
+      position.x = Math.max(5, Math.min(95, position.x + dx / length * speed * elapsed));
+      position.y = Math.max(8, Math.min(93, position.y + dy / length * speed * elapsed));
+      refresh();
+      if (held.up || held.down || held.left || held.right) frame = requestAnimationFrame(frameMove);
+      else frame = 0;
+    }
+    function hold(dir, active) {
+      if (!Object.prototype.hasOwnProperty.call(held, dir)) return;
+      held[dir] = active;
+      if (active && !frame) { lastFrame = performance.now(); frame = requestAnimationFrame(frameMove); }
+      if (!active && !held.up && !held.down && !held.left && !held.right && frame) { cancelAnimationFrame(frame); frame = 0; }
+    }
+    function stepOnce(dir) {
+      var v = vectors[dir]; if (!v) return;
+      position.x = Math.max(5, Math.min(95, position.x + v[0] * 2.8));
+      position.y = Math.max(8, Math.min(93, position.y + v[1] * 2.8)); refresh();
+    }
+    function releasePress(dir) {
+      var start = pressStart[dir]; hold(dir, false);
+      if (start && performance.now() - start.time < 140 && Math.hypot(position.x - start.x, position.y - start.y) < 0.4) stepOnce(dir);
+      delete pressStart[dir];
+    }
+    function enter(id) {
+      var p = places.find(function (x) { return x.id === id; });
+      if (!p || distance(p) >= 19) { status.textContent = "Walk a little closer to " + (p ? p.title : "that place") + "."; return; }
+      if (id === "quest") irA("aventura");
+      else irA("mochila", { mundo: id });
+    }
+    scene.querySelectorAll("[data-place]").forEach(function (b) { b.addEventListener("click", function () { enter(b.dataset.place); }); });
+    el.querySelectorAll("[data-move]").forEach(function (b) {
+      var dir = b.dataset.move;
+      b.addEventListener("pointerdown", function (ev) { ev.preventDefault(); scene.focus({ preventScroll: true }); pressStart[dir] = { x: position.x, y: position.y, time: performance.now() }; try { b.setPointerCapture(ev.pointerId); } catch (_) {} hold(dir, true); });
+      b.addEventListener("pointerup", function () { releasePress(dir); lastPointerTap = performance.now(); });
+      ["pointercancel", "lostpointercapture"].forEach(function (name) { b.addEventListener(name, function () { hold(dir, false); delete pressStart[dir]; }); });
+      b.addEventListener("click", function () { if (performance.now() - lastPointerTap > 300) stepOnce(dir); });
+      b.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") hold(dir, true); });
+      b.addEventListener("keyup", function () { hold(dir, false); });
+    });
+    scene.addEventListener("keydown", function (ev) {
+      var dir = keyMap[ev.key.toLowerCase()]; if (!dir) return;
+      ev.preventDefault(); if (!pressStart[dir]) pressStart[dir] = { x: position.x, y: position.y, time: performance.now() }; hold(dir, true);
+    });
+    scene.addEventListener("keyup", function (ev) { var dir = keyMap[ev.key.toLowerCase()]; if (dir) releasePress(dir); });
+    scene.addEventListener("blur", function () { Object.keys(held).forEach(function (dir) { held[dir] = false; }); if (frame) cancelAnimationFrame(frame); frame = 0; });
+    refresh();
+  };
+
+  pantallas.mochila = function (el, datos) {
+    var e = Alm.leer(), filter = datos.mundo || "all";
+    el.innerHTML = '<section class="pantalla av-storage"><button class="volver" id="av-storage-back">← Explore</button><div class="av-eyebrow">YOUR ACTIVITY STORAGE</div><h2 class="tit">Activity backpack</h2><p class="sub">Pick any game. Your existing activities and progress stay together.</p><div class="av-storage-filters" role="group" aria-label="Choose a subject"><button data-filter="all">All</button><button data-filter="reading">📚 Reading</button><button data-filter="math">🧮 Math</button></div><div class="av-storage-count" id="av-storage-count"></div><div class="av-storage-grid" id="av-storage-grid"></div></section>';
+    el.querySelector("#av-storage-back").addEventListener("click", function () { irA("explorar"); });
+    function draw() {
+      var grid = el.querySelector("#av-storage-grid"), items = [];
+      if (filter === "all" || filter === "reading") items = items.concat(nivelesDe("reading").map(function (n) { return { mundo: "reading", nivel: n }; }));
+      if (filter === "all" || filter === "math") items = items.concat(nivelesDe("math").map(function (n) { return { mundo: "math", nivel: n }; }));
+      grid.innerHTML = "";
+      el.querySelectorAll("[data-filter]").forEach(function (b) { b.classList.toggle("av-filter-active", b.dataset.filter === filter); });
+      el.querySelector("#av-storage-count").textContent = items.length + " activities ready to play";
+      items.forEach(function (item) {
+        var n = item.nivel, b = document.createElement("button"), runs = (e.destrezas[n.id] || {}).intentos || 0;
+        b.type = "button"; b.className = "av-activity-card";
+        b.innerHTML = '<span class="av-activity-icon">' + (item.mundo === "reading" ? "📚" : "🧮") + '</span><span class="av-activity-subject">' + (item.mundo === "reading" ? "READING" : "MATH") + '</span>' + (n.etiqueta ? '<span class="nivel-tag">' + U.esc(n.etiqueta) + '</span>' : '') + '<strong>' + U.esc(n.tit) + '</strong><span class="av-activity-description">' + U.esc(n.sub || "Choose and play") + '</span><span class="av-activity-progress">' + (runs ? runs + " practices" : "Ready to play") + '</span>';
+        b.addEventListener("click", function () {
+          if (n.pantalla) irA(n.pantalla, { mundo: item.mundo });
+          else irA("jugar", { mundo: item.mundo, nivel: n, volverA: "mochila" });
+        });
+        grid.appendChild(b);
+      });
+    }
+    el.querySelectorAll("[data-filter]").forEach(function (b) { b.addEventListener("click", function () { filter = b.dataset.filter; draw(); }); });
+    draw();
+  };
   /* --- los 12 módulos de sight words --------------------------------------
      360 palabras en total. Cada módulo agrupa un patrón fonético, así que
      elegir uno es elegir qué se practica, no solo qué palabras salen.        */
