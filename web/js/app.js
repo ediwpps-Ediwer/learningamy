@@ -858,6 +858,7 @@
       var b = document.createElement("button");
       b.className = "nivel" + (n.prioridad ? " nivel-prio" : "");
       b.innerHTML =
+        J.ui.ilustracion(n.tit) +
         (n.etiqueta ? '<span class="nivel-tag">' + U.esc(n.etiqueta) + '</span>' : "") +
         '<span class="nivel-tit">' + U.esc(n.tit) + '</span>' +
         '<span class="nivel-sub">' + U.esc(n.sub) + '</span>';
@@ -982,7 +983,7 @@
       items.forEach(function (item) {
         var n = item.nivel, b = document.createElement("button"), runs = (e.destrezas[n.id] || {}).intentos || 0;
         b.type = "button"; b.className = "av-activity-card";
-        b.innerHTML = '<span class="av-activity-icon">' + (item.mundo === "reading" ? "📚" : "🧮") + '</span><span class="av-activity-subject">' + (item.mundo === "reading" ? "READING" : "MATH") + '</span>' + (n.etiqueta ? '<span class="nivel-tag">' + U.esc(n.etiqueta) + '</span>' : '') + '<strong>' + U.esc(n.tit) + '</strong><span class="av-activity-description">' + U.esc(n.sub || "Choose and play") + '</span><span class="av-activity-progress">' + (runs ? runs + " practices" : "Ready to play") + '</span>';
+        b.innerHTML = J.ui.ilustracion(n.tit) + '<span class="av-activity-subject">' + (item.mundo === "reading" ? "READING" : "MATH") + '</span>' + (n.etiqueta ? '<span class="nivel-tag">' + U.esc(n.etiqueta) + '</span>' : '') + '<strong>' + U.esc(n.tit) + '</strong><span class="av-activity-description">' + U.esc(n.sub || "Choose and play") + '</span><span class="av-activity-progress">' + (runs ? runs + " practices" : "Ready to play") + '</span>';
         b.addEventListener("click", function () {
           if (n.pantalla) irA(n.pantalla, { mundo: item.mundo });
           else irA("jugar", { mundo: item.mundo, nivel: n, volverA: "mochila" });

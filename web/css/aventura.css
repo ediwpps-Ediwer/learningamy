@@ -1,5 +1,21 @@
 
 /* Explorer 1: táctil, pausas y progreso visible. */
+.juego-ilustracion{position:relative;width:min(100%,720px);height:clamp(112px,25vw,158px);margin:0 auto 13px;overflow:hidden;border:2px solid #7189b9;border-radius:16px;background:#34466f;box-shadow:0 8px 20px #080d1d66}
+.juego-ilustracion svg{display:block;width:100%;height:100%}
+.juego-ilustracion .art-letter{font:700 24px system-ui,sans-serif;fill:#27324f}
+.juego-ilustracion .art-word{font:700 18px system-ui,sans-serif;fill:#394667;letter-spacing:2px}
+.juego-ilustracion .art-number{font:700 22px system-ui,sans-serif;fill:#27324f}
+.juego-ilustracion .art-sign{font:700 29px system-ui,sans-serif;fill:#fff1c8}
+.juego-ilustracion .art-coin{font:700 12px system-ui,sans-serif;fill:#58482c}
+.juego-ilustracion.art-story-cave{border-color:#86f2c1;box-shadow:0 0 20px #63efba44}
+.juego-ilustracion.art-story-kite{border-color:#a5e6ff;box-shadow:0 0 20px #54d6ff44}
+.av-activity-card .juego-ilustracion{width:100%;height:104px;margin:0 0 5px;border-width:1px;border-radius:11px;box-shadow:none}
+.av-activity-card .juego-ilustracion svg{min-width:100%;}
+.av-activity-card .nivel-tag{position:static;align-self:flex-end;max-width:100%;font-size:10px}
+.nivel .juego-ilustracion{width:100%;height:104px;margin:0 0 5px;border-width:1px;border-radius:11px;box-shadow:none}
+@media(max-width:560px){.juego-ilustracion{height:clamp(108px,34vw,140px);margin-bottom:10px}}
+@media(prefers-reduced-motion:no-preference){.juego .juego-ilustracion svg>g{animation:art-bob 3.2s ease-in-out infinite;transform-origin:95px 90px}}
+@keyframes art-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .av-home{margin:20px 0;padding:24px;border:2px solid var(--esmeralda);border-radius:18px;background:linear-gradient(130deg,#173b39,#212842)}
 .av-eyebrow{font:12px var(--f-pixel);letter-spacing:.08em;color:var(--esmeralda);margin-bottom:12px}
 .av-village{display:flex;flex-wrap:wrap;gap:14px;font-size:42px;padding:20px 8px;background:linear-gradient(transparent 80%,#24533b 80%);border-radius:12px}
@@ -44,3 +60,4 @@
 @media(prefers-reduced-motion:reduce){.av-world-player,.av-world-place,.av-activity-card{transition:none!important}}
 .av-world-screen .sub{margin-bottom:4px}.av-world-road{display:none}.av-world-keyboard{position:absolute;z-index:1;left:5%;top:24%;width:90%;height:62%;display:flex;flex-direction:column;justify-content:space-evenly;gap:5px;padding:8px 10px;border:7px solid #111827;border-bottom-width:14px;border-radius:17px;background:linear-gradient(140deg,#27324d,#101729);box-shadow:0 20px 0 #080d18,0 28px 35px #070a1380;transform:perspective(700px) rotateX(9deg) rotateZ(-3deg);transform-style:preserve-3d}.av-keyboard-row{display:flex;justify-content:center;gap:4px;flex:1;min-height:0}.av-world-key{display:grid;place-items:center;flex:1;min-width:0;margin-bottom:4px;border:1px solid #707e9b;border-bottom:5px solid #7887a4;border-radius:6px;background:linear-gradient(145deg,#495979,#293652);box-shadow:0 4px 0 #10182a;color:#e7edff;font:700 clamp(7px,1.5vw,12px) var(--f-pixel);text-shadow:0 1px #10182a}.av-keyboard-row:nth-child(2) .av-world-key:nth-child(3n){background:linear-gradient(145deg,#53628a,#303e64)}.av-keyboard-row:nth-child(3) .av-world-key:nth-child(2n){background:linear-gradient(145deg,#4c6382,#283e58)}.av-world-key.av-key-space{flex:4}.av-world-bumper{position:absolute;z-index:2;font-size:clamp(24px,5vw,42px);filter:drop-shadow(5px 9px 0 #10162899);pointer-events:none}.av-bumper-one{left:39%;top:61%}.av-bumper-two{left:60%;top:38%}.av-bumper-three{left:13%;top:26%}.av-place-reading{background:linear-gradient(145deg,#255e60,#153d45)}.av-place-math{background:linear-gradient(145deg,#534c8c,#30295f)}.av-place-quest{background:linear-gradient(145deg,#845b26,#523919)}
 .av-world-screen .sub{margin-bottom:4px}.av-world-road{display:none}.av-world-keyboard{left:12%;top:28%;width:76%;height:60%;transform:perspective(700px) rotateX(13deg) rotateZ(-4deg)}.av-world-ground{left:-8%;top:25%;width:116%;height:116%;border-radius:20%;background-color:#51784f;background-image:linear-gradient(#d4efab2b 2px,transparent 2px),linear-gradient(90deg,#d4efab2b 2px,transparent 2px)}.av-world-town{position:absolute;inset:0;z-index:2;pointer-events:none}.av-world-house{position:absolute;font-size:clamp(30px,6vw,52px);filter:drop-shadow(6px 9px 0 #18233699)}.av-house-one{left:4%;top:30%}.av-house-two{right:4%;top:64%}.av-world-garden{position:absolute;left:5%;bottom:7%;font-size:clamp(17px,3.2vw,29px);filter:drop-shadow(3px 6px 0 #16241688)}.av-world-bumper{opacity:.9}.av-place-reading{background:linear-gradient(145deg,#367457,#1b493f)}.av-place-math{background:linear-gradient(145deg,#6365a5,#353568)}.av-place-quest{background:linear-gradient(145deg,#e88a38,#9d4c2a);border-color:#ffe2a5}.av-place-quest.av-place-near{border-color:#fff1c4;box-shadow:0 0 0 5px #ffd05b66,8px 13px 0 #121b30,12px 18px 0 #080e1c}.av-world-controls button{user-select:none;-webkit-user-select:none;touch-action:none}
+.av-activity-card .nivel-tag{position:static;top:auto;right:auto;align-self:flex-end;max-width:100%;font-size:10px}

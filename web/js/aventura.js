@@ -51,6 +51,8 @@ function drawQuestion(el,q,done,teaching){
   var guard=generation, locked=false,help=!!teaching||!!(q.supports&&q.supports.length), heard=q.skill!=="escucha";
   var card=document.createElement("div");card.className="av-question";el.appendChild(card);
   var title=document.createElement("h3");title.className="av-prompt";title.textContent=q.prompt;card.appendChild(title);
+  var artTitle={lectura:"Word Reading",dictado:"Spelling",escucha:"Story",comprension:"Story",operaciones:"Math Facts",numeros:"Number Blocks",formas:"Shapes",graficas:"Graphs"}[q.skill]||"Word Reading";
+  var art=document.createElement("div");art.innerHTML=J.ui.ilustracion(artTitle);card.appendChild(art.firstChild);
   var media=document.createElement("div");media.className="av-media";card.appendChild(media);
   if(q.kind==="oral"){media.innerHTML='<div class="palabra-grande">'+esc(q.word)+'</div>';}
   if(q.story&&q.skill==="comprension"){var p=document.createElement("p");p.className="av-story";p.textContent=q.story;media.appendChild(p);}
