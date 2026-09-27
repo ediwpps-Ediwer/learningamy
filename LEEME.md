@@ -1,3 +1,4 @@
+> Revisión del 21 de septiembre de 2026: La carpeta actual es C:\Proyectos\JuegoGaby y el juego ya está construido. El texto inferior describe el arranque y conserva ubicaciones/estado antiguos. Empezar por [README.md](README.md) y [el nuevo plan](docs/05-REPLANIFICACION.md).
 # Juego de Gaby — carpeta del proyecto
 
 ## Dónde dejar la documentación

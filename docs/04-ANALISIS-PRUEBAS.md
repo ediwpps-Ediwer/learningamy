@@ -7,13 +7,9 @@
 
 ---
 
-## Resumen en una línea
+## Nota de revisión — 21 de septiembre de 2026
 
-**El problema de Gabriel no es que no sepa fonética. Sabe. El problema es que es
-lento (automaticidad) y que no puede escribir lo que sí puede leer (encoding).**
-Y en matemática está bastante mejor de lo que se creía.
-
----
+Las interpretaciones originales fueron corregidas. Los puntajes de agosto son antecedentes, no una evaluación nueva. El plan vigente está en [05-REPLANIFICACION.md](05-REPLANIFICACION.md).
 
 ## 1. Los números
 
@@ -81,88 +77,19 @@ Y en matemática está bastante mejor de lo que se creía.
 
 ---
 
-## 2. Lo que los números dicen cuando se leen juntos
+## 2. Interpretación revisada — 21 de septiembre de 2026
 
-### Hallazgo 1 — Sabe los sonidos. Perfectamente.
+Los resultados anteriores muestran prioridades y fortalezas dentro de las tareas evaluadas. No permiten concluir que toda la dificultad sea velocidad, que la fonética esté completamente dominada ni que la comprensión no necesite enseñanza.
 
-100 % en fonema-grafema de **todas** las consonantes, blends y digraphs. 100 % en
-vocales largas y cortas, final -e, r-controlled y diptongos. 100 % decodificando
-palabras de dos sílabas.
+- Los 8/8, 7/7 y 4/4 de ACE son muestras pequeñas y específicas. Confirmar precisión y transferencia con palabras nuevas, sin obligarlo a repetir indiscriminadamente lo que ya sabe.
+- El 0/7 de escritura justifica priorizarla y observar qué apoyos necesita. No demuestra por sí solo una causa ni que haya escrito exactamente las mismas palabras que leyó.
+- Los porcentajes de fluidez señalan necesidad de observación; no equivalen a una medición de palabras correctas por minuto ni explican solos otros resultados.
+- Se retira la explicación de que i-Ready es “contra reloj”: [el proveedor indica que sus ítems no son cronometrados](https://www.curriculumassociates.com/campaigns/switch-to-inform). No atribuir las diferencias entre pruebas a presión temporal sin evidencia.
+- Operaciones es una fortaleza relativa en Math y geometría merece atención. Percentil nacional y ubicación curricular miden cosas diferentes; uno no elimina necesidades señaladas por el otro.
+- La influencia del inglés en problemas matemáticos es una hipótesis para observar, no una causa confirmada.
+- Trabajar vocabulario, comprensión oral y leída, patrones y escritura junto a fluidez. El reconocimiento automático no sustituye la comprobación adulta.
 
-**Esto invalida la hipótesis con la que empezamos.** El plan original arrancaba en
-sonidos de letras y CVC. **Sería hacerle perder el tiempo en algo que ya domina.**
-
-### Hallazgo 2 — El cuello de botella es la VELOCIDAD, no el conocimiento
-
-Los tres estándares de fluidez dan exactamente el mismo número: **44 %, 44 %, 44 %**.
-Automaticidad de sight words, lectura en voz alta, y prosodia.
-
-Sabe descifrar cada palabra, pero le cuesta trabajo cada vez. Cuando toda la energía
-se va en descifrar, no queda nada para entender ni para leer con expresión. Eso
-explica por qué la comprensión sale baja **sin que el problema sea la comprensión**.
-
-> Esto es lo que en la práctica se llama un lector "preciso pero no fluido". La
-> intervención no es enseñar fonética de nuevo: es **repetición cronometrada** hasta
-> que el reconocimiento se vuelva automático.
-
-### Hallazgo 3 — El hueco más grande y más concreto: **escribir, 0 %**
-
-`[2.F.P.3.a]` Encode palabras de dos sílabas: **0 de 7**.
-`[2.F.P.2.a]` Decode las mismas palabras: **4 de 4**.
-
-**Lee lo que no puede escribir.** El contraste es total y es el dato más accionable
-del paquete: en la misma prueba, el mismo día, mismo tipo de palabra.
-
-Es un patrón conocido: reconocer una palabra escrita es más fácil que producirla
-desde cero, porque leer da pistas visuales y escribir exige tener el mapa completo
-sonido→letra en la cabeza. La maestra lo marcó a mano en el reporte:
-*"Spelling Words"*.
-
-**Prioridad número uno del juego.** Y encaja perfecto con el módulo que está viendo
-ahora (VCe: made, safe, time, like).
-
-### Hallazgo 4 — Los dos reportes se contradicen en fonética, y la contradicción tiene sentido
-
-i-Ready (13 ago) dice Phonics = *Needs Improvement*, "practicar decodificar palabras
-VC y CVC simples con vocales cortas". ACE (28 ago) le da 100 % en fonética.
-
-No es un error de ninguno de los dos. Miden cosas distintas:
-
-- **ACE** mide conocimiento aislado, en papel, sin apuro. → Sabe.
-- **i-Ready** es adaptativo, en pantalla y contra reloj. → Bajo presión de tiempo, se cae.
-
-Los dos reportes están diciendo lo mismo desde ángulos distintos: **el conocimiento
-está; la automaticidad no.** Y eso vuelve a apuntar a lo mismo que el hallazgo 2.
-
-### Hallazgo 5 — En matemática está mejor de lo que se pensaba
-
-El punto de partida era "nivel de matemática de 1er grado". Los datos dicen otra cosa:
-
-- **Percentil 53 nacional** — por encima de la mitad de los niños de 2º grado del país.
-- **Number and Operations: AT GRADE 2** — en nivel. No aproximándose: en nivel.
-- Solo 27 puntos por debajo del piso de grado (428), contra 113 en lectura.
-
-**La brecha real de Gabriel es de lectura, no de matemática.** Y una parte de lo que
-parece dificultad en matemática probablemente sea que los problemas están escritos en
-inglés — algo que el juego va a medir por separado.
-
-### Hallazgo 6 — El punto flojo de matemática es Geometría, y no estaba en el radar
-
-**Geometry: Needs Improvement**, el único dominio de matemática en esa categoría.
-Formas de 2D y 3D, relaciones entre formas, términos geométricos básicos.
-
-No estaba en la lista de juegos pedidos. Lo agrego como noveno juego, porque es el
-hueco que los datos señalan.
-
-### Hallazgo 7 — Su fortaleza: High-Frequency Words
-
-Único dominio de lectura que no es *Needs Improvement*: **Approaching Grade 2**.
-El reporte dice que reconoce muchas palabras de 1er grado y está listo para las de 2º.
-
-**Por acá se arranca.** Empezar por lo que ya casi domina construye confianza antes
-de atacar lo difícil. Y la lista de módulos que subiste da exactamente esas palabras.
-
----
+Los puntajes se conservan como transcripción histórica de los documentos revisados en septiembre 5; esta revisión no volvió a puntuar los originales ni evaluó al niño. La ruta actual está en [05-REPLANIFICACION.md](05-REPLANIFICACION.md).
 
 ## 3. Lo que el material de clase agrega
 
@@ -256,34 +183,11 @@ pura.
 
 ---
 
-## 4. Plan corregido
+## 4. Plan vigente
 
-### Reading — en este orden
+Seguir [05-REPLANIFICACION.md](05-REPLANIFICACION.md): diagnóstico inicial con juegos, ruta por habilidad, enseñanza explícita, misiones conectadas con tareas anteriores, chequeo breve semanal y revisión amplia cada cuatro semanas.
 
-| # | Foco | Por qué | Juego |
-|---|---|---|---|
-| 1 | **Spelling / encoding** | 0 % — el hueco más grande y más concreto | Spelling |
-| 2 | **Automaticidad de sight words** | 44 %, y es su área más fuerte: victorias rápidas | Lectura de palabras · Sopa |
-| 3 | **Fluidez cronometrada** | 44 % — repetición contra reloj | Nonsense words 1 min |
-| 4 | **Patrón VCe + soft c/g + trigraphs** | Es lo de esta semana en clase | Spelling · Lectura |
-| 5 | **Prosodia** | 44 % — leer frases, no palabras sueltas | Cuento |
-| 6 | **Comprensión: personajes, ambiente, diálogo** | 50 % | Cuento · Challenger |
-
-**Lo que NO hay que hacer:** empezar por sonidos de letras y CVC básico. Los tiene al
-100 %. Sería aburrirlo con lo que ya sabe.
-
-### Math — en este orden
-
-| # | Foco | Por qué | Juego |
-|---|---|---|---|
-| 1 | **Gráficas de barras y pictogramas** | Es lo de esta semana + pedido del papá | Gráficas |
-| 2 | **Incógnita en cualquier posición** | Seguir la consigna, no calcular | Operaciones |
-| 3 | **Las 4 estrategias de la escuela** | Pedido explícito del papá | Operaciones |
-| 4 | **Monedas y billetes** | Pedido del papá + actividad de la Lesson 4 | Monedas |
-| 5 | **Geometría** | Needs Improvement — el hueco que nadie vio | *(juego nuevo)* |
-| 6 | Problemas de un paso → comparación → dos pasos | Lo que anunció la maestra | Problemas |
-
----
+La velocidad no es el único foco. Incluir desde el inicio escritura, precisión, vocabulario y comprensión; reforzar geometría y habilidades matemáticas según evidencia. El material de Módulo 3 y la Lesson 4 queda como material disponible para repaso hasta confirmar la tarea vigente.
 
 ## 5. Qué necesito confirmar con el papá
 
@@ -297,12 +201,6 @@ pura.
 
 ---
 
-## 6. Cosas que le quiero decir al papá
+## 6. Comunicación con la familia
 
-- **En matemática está en el percentil 53 nacional.** Está por encima de la mitad de
-  los niños de 2º grado del país. No está atrasado en matemática.
-- **En fonética sacó 100 %.** Sabe los sonidos. Lo que le falta es velocidad.
-- **En escribir palabras sacó 0 %.** Ahí es donde hay que trabajar, y es muy
-  específico y muy atacable.
-- La brecha real está en un solo lugar: **velocidad de lectura**. Y la velocidad se
-  construye con repetición corta y diaria, que es exactamente lo que un juego hace bien.
+Informar fortalezas y apoyos necesarios sin reducir el problema a velocidad ni declarar dominio general por una muestra pequeña. Confirmar target y fecha con el reporte escolar. Las palomitas ya se resolvieron en D5: se practica todo y se observa el desempeño.

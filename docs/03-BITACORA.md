@@ -113,3 +113,15 @@ tomadas en `02-DECISIONES.md`.
 
 Entorno de la PC verificado: Python 3.12.10 y Node 24.19.0 presentes. No hace
 falta instalar nada del lado de la PC.
+
+## 2026-09-21 · Revisión y nueva planificación
+
+Se revisaron documentación, código y el sitio en modo prueba. Se comprobaron avatar, entrada al diagnóstico, navegación, retos y ayuda de Spelling. No se usó la partida real ni se evaluó a Gaby.
+
+Hallazgos: retos por fecha, dominio mezclado entre modalidades, repaso sin calendario, contenido con semana fija y conclusiones causales excesivas en el análisis escolar. Se corrigió la interpretación de 04 y se marcaron como históricos los documentos desactualizados.
+
+Entregados 05-REPLANIFICACION.md, 06-IMPLEMENTACION.md y AGENTS.md. El nuevo pedido de diagnóstico inicial y periódico queda incorporado con ruta adaptativa, chequeo semanal y revisión cada cuatro semanas.
+
+## 2026-09-21 · Explorer 1 local
+
+Se implementó la ruta en `aprendizaje.js` y `aventura.js`, reutilizando los juegos existentes. Se agregaron reanudación, evidencia por modalidad, misión adaptativa, calendario local, respaldo de migración, aldea y panel familiar. Se verificó con 19 pruebas automáticas y navegación completa en `?prueba`. No se publicó ni se tocó la partida real.

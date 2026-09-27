@@ -1,3 +1,4 @@
+> Revisión del 21 de septiembre de 2026: Documento histórico del arranque. La app ya existe. Las hipótesis educativas, el cronograma y el estado vigente se reemplazan por [05-REPLANIFICACION.md](05-REPLANIFICACION.md) y [06-IMPLEMENTACION.md](06-IMPLEMENTACION.md).
 # Estrategia y arquitectura — Juego de Gaby
 
 > Documento vivo. Última revisión: 2026-09-05

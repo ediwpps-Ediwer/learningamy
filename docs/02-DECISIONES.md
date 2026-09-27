@@ -130,3 +130,14 @@ Así, en el panel de papá, siempre se puede ver qué versión jugó y qué se c
 | T4 | Dos intentos + botón "no me escuchó" antes de marcar rojo | El reconocimiento de voz falla con voz infantil y acento ESL. Sin esto, falsos rojos matan la motivación. |
 | T5 | Los problemas de matemática registran por separado "falló la mate" y "falló el inglés" | Sin esa separación, un problema de lectura se lee como si fuera un problema de matemática. |
 | T6 | El diagnóstico arranca por debajo de su nivel conocido | Empezar con éxitos fáciles y subir. Empezar difícil y bajar deja la sensación de fracaso desde el minuto uno. |
+
+## 2026-09-21 — Replanificación solicitada por el papá
+
+### D7 — Adaptar tareas y conectar aprendizajes
+El papá autoriza hacer las tareas más jugables y conectarlas con tareas anteriores. Esto actualiza la secuencia de D6: puede diseñarse una adaptación desde el inicio sin esperar a que falle la versión literal. Conservar el objetivo, el original local y la explicación de cambios; no confundir práctica equivalente con entrega escolar.
+
+### D8 — Diagnóstico inicial y periódico
+Pedido explícito: al primer ingreso, diagnosticar con juegos, usar resultados para diseñar cómo seguir y repetir diagnósticos. Diseño propuesto: aventura inicial pausable, observación durante misiones, chequeo breve semanal y revisión más amplia cada cuatro semanas. La frecuencia exacta es una propuesta ajustable; no una evaluación escolar oficial.
+
+### D9 — Separar práctica y evidencia
+La revisión identifica que lectura, sopa y spelling se mezclan en palabras y que dos verdes acumulados se interpretan como dominio. Reemplazar esa regla en una futura implementación; conservar datos históricos sin inventar su modalidad. La propuesta completa y sus criterios están en 05 y 06.

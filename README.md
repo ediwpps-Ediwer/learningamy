@@ -1,3 +1,4 @@
+> **Plan actualizado — 21 de septiembre de 2026.** Leer [la nueva ruta educativa](docs/05-REPLANIFICACION.md) y [la implementación](docs/06-IMPLEMENTACION.md). El diagnóstico inicial con juegos, la ruta adaptativa, los chequeos semanales y la revisión cada cuatro semanas ya están implementados localmente en Explorer 1. El enlace público de Netlify todavía muestra la versión anterior hasta publicar esta carpeta.
 # Block Quest — el juego de Gabriel
 
 Práctica de Reading y Math armada con **su propio material de clase**:
@@ -162,6 +163,4 @@ JuegoGaby/
 - **La tipografía no es decorativa.** Toda palabra en inglés que él debe leer
   está en **Andika**, una fuente diseñada para lectores principiantes, con
   letras inequívocas (`a` de un piso, `l` / `I` / `1` distintas).
-- **El diagnóstico no empieza por lo básico.** Sacó 100 % en fonética en la
-  prueba de la escuela. Empezar por sonidos de letras sería aburrirlo con lo que
-  ya sabe. Ver `docs/04-ANALISIS-PRUEBAS.md`.
+- **El diagnóstico comprueba habilidades concretas.** Los aciertos en una prueba breve no justifican descartar toda la fonética ni atribuir todo a velocidad. Ver el plan actualizado; precisión, escritura, vocabulario y comprensión se observan por separado.

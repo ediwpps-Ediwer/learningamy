@@ -1,3 +1,4 @@
+> Revisión del 21 de septiembre de 2026: Perfil histórico. No usar las afirmaciones de dominio ni las hipótesis causales siguientes como conclusiones actuales. Ver [05-REPLANIFICACION.md](05-REPLANIFICACION.md). El desglose Reading y el reporte Math ya están transcritos en 04; faltan target individual, fecha y datos posteriores.
 # Perfil de Gaby
 
 > Documento vivo. Se actualiza cada vez que aprendo algo nuevo de él.
