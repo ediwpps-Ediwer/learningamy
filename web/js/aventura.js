@@ -39,10 +39,11 @@ function intro(el){
   var body=shell(el,kind==="inicial"?"Explore your world":"Explorer check-in","Short games help us choose your next adventure.");
   var cycle=E.data.active?E.start():null;
   var skills=cycle?cycle.skills:kind==="semanal"?E.priorities("reading").slice(0,2).concat(E.priorities("math").slice(0,1)):Object.keys(L.skills);
-  body.innerHTML='<div class="av-stations">'+skills.map(function(k){var s=L.skills[k];return '<div class="av-station"><span>'+s.icon+'</span><strong>'+s.en+'</strong></div>';}).join("")+'</div>'+
-    '<p class="nota">You can pause after any answer. An adult checks reading aloud. If no adult is available, it stays unverified and you can keep going.</p>'+
+  body.innerHTML='<p class="nota av-diagnostic-label">PLAY A SKILL · Choose a picture to start that game, or use Continue for the suggested order.</p><div class="av-stations">'+skills.map(function(k){var s=L.skills[k],r=E.summary(k);return '<button type="button" class="av-station" data-skill="'+k+'"><span>'+s.icon+'</span><strong>'+s.en+'</strong><small>'+(s.mundo==="math"?"MATH":"READING · LISTENING")+' · '+(r.pct===null?"Start game":("Level "+(r.level+1)+" · "+r.status))+ '</small><em>Play →</em></button>';}).join("")+'</div>'+
+    '<p class="nota">Each game records observations and adjusts the next level. You can pause after any answer. The map and activity backpack keep the selected games available.</p>'+
     '<p class="nota">'+(kind==="semanal"?"Short check-in: about 5–8 minutes.":"This adventure comes in short parts. You can finish it over a few visits.")+'</p><div class="acc" id="av-start"></div>';
   var acc=body.querySelector("#av-start");
+  body.querySelectorAll("[data-skill]").forEach(function(b){b.addEventListener("click",function(){var c=E.data.active||E.start(kind),ix=c.questions.findIndex(function(q){return q.skill===b.dataset.skill;});if(ix>=0){c.cursor=ix;N.Almacen.guardar();route("diag",{cycle:c.id});}});});
   button(acc,cycle?"Continue →":"Let's explore →",function(){E.start(kind);route("diag");},"btn-primario btn-grande");
   button(acc,"Play and explore later",function(){route("casa");},"btn-fantasma");
   say("Explore your world. You can pause any time.");
