@@ -133,13 +133,47 @@
           '<p class="error" id="err" hidden></p>' +
           '<button class="btn btn-primario btn-grande" type="submit" id="go">Enter</button>' +
         '</form>' +
-        '<p class="nota">Need an account? Ask a parent to create one from the dashboard.</p>' +
+        '<p class="nota">Need a child account? A parent creates it from the dashboard.</p>' +
+        '<button class="btn btn-fantasma" type="button" id="showParent">Create the first parent account</button>' +
+        '<div id="parentCreate" hidden>' +
+          '<h3 class="panel-h3">Parent account</h3>' +
+          '<p class="nota">Use this once for the adult who will manage the family.</p>' +
+          '<form class="form-login" id="parentForm">' +
+            '<div class="campo"><label for="pu">Username</label><input id="pu" class="entrada" autocapitalize="none" autocorrect="off" maxlength="20" placeholder="arisjoel"></div>' +
+            '<div class="campo"><label for="pn">Parent name</label><input id="pn" class="entrada" maxlength="40" placeholder="Aris Joel"></div>' +
+            '<div class="campo"><label for="pc">Password</label><input id="pc" class="entrada" type="password" minlength="6" maxlength="40"></div>' +
+            '<p class="error" id="perr" hidden></p>' +
+            '<button class="btn btn-primario btn-grande" type="submit" id="pgo">Create parent account</button>' +
+          '</form>' +
+        '</div>' +
       '</section>';
 
     var err = el.querySelector("#err");
     el.querySelector("#ver").addEventListener("click", function () {
       var c = el.querySelector("#c");
       c.type = c.type === "password" ? "text" : "password";
+    });
+
+    el.querySelector("#showParent").addEventListener("click", function () {
+      var box = el.querySelector("#parentCreate");
+      box.hidden = !box.hidden;
+      if (!box.hidden) el.querySelector("#pu").focus();
+    });
+
+    el.querySelector("#parentForm").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var b = el.querySelector("#pgo"), pe = el.querySelector("#perr");
+      pe.hidden = true; b.disabled = true; b.textContent = "Creating…";
+      N.Auth.crear(el.querySelector("#pu").value, el.querySelector("#pc").value, el.querySelector("#pn").value || el.querySelector("#pu").value, null)
+        .then(function (r) {
+          if (r.ok) {
+            Alm.ponerModo("cuenta"); Alm.olvidar();
+            alert("Parent account created. Next, create Amy's child account from the Parent dashboard.");
+            return irA("avatar");
+          }
+          pe.textContent = ERRORES[r.error] || r.error; pe.hidden = false;
+          b.disabled = false; b.textContent = "Create parent account";
+        });
     });
 
     el.querySelector("#f").addEventListener("submit", function (ev) {
