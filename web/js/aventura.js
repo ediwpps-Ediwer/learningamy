@@ -269,7 +269,7 @@ g.AVENTURA={
     };
     screens.aventura=mission;screens.pasoAventura=step;
   },
-  home:home,panel:panel,needsInitial:function(){try{return !engine().data.cycles.some(function(c){return c.completed;});}catch(e){return true;}},
+  home:home,panel:panel,needsInitial:function(){try{return !N.Almacen.leer().diagnostico.hecho;}catch(e){return true;}},
   cancel:function(){generation++;if(g.speechSynthesis)g.speechSynthesis.cancel();}
 };
 })(window);

@@ -311,6 +311,9 @@
         guardar();
         return true;
       },
+      localDisponible: function () {
+        try { return !!localStorage.getItem("gaby.local"); } catch (e) { return false; }
+      },
       borrarPrueba: function () {
         try { localStorage.removeItem("gaby.prueba"); localStorage.removeItem("gaby.prueba.antes-explorer-1"); } catch (e) {}
         enMemoria = null;

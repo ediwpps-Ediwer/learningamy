@@ -231,6 +231,7 @@
       return e2.desbloqueado[cual] || [];
     }
     function tiene(cual, i) {
+      if (!e.jugador.creado) return true;
       return i < LIBRES[cual] || desbloqueados(cual).indexOf(i) >= 0;
     }
     function comprar(cual, i, alHacer) {
@@ -380,8 +381,6 @@
       J.ui.boton("▶ Start", "btn-primario btn-grande", function () {
         irA("diag", { paso: 0 });
       }));
-    el.querySelector("#acc").appendChild(
-      J.ui.boton("Skip for now", "btn-fantasma", function () { irA("casa"); }));
   };
 
   pantallas.diag = function (el, datos) {
@@ -1303,6 +1302,11 @@
           b.disabled = true; b.textContent = "Creating…";
           N.Auth.crear(u, c, n || u, v ? codigo : null).then(function (r) {
             if (r.ok) {
+              var importar = Alm.localDisponible() && confirm(
+                "A local player has saved progress on this device.\n\n" +
+                "Import it into this new account? Choose Yes only when this is Gaby's account.\n" +
+                "Choose No for Amy so her learning starts separately.");
+              if (importar) Alm.subirLoLocal();
               Alm.olvidar();
               alert("Account created.\n\nUsername: " + u + "\nPassword: " + c +
                     "\n\nWrite it down. You are now signed into that account: set up the avatar " +
