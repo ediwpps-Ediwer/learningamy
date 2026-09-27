@@ -12,7 +12,7 @@ function engine(){
 }
 function say(text){if(N.Almacen.leer().ajustes.voz)N.Voz.decir(text,{rate:.75});}
 function shell(el,title,sub){
-  el.innerHTML='<section class="pantalla aventura"><button class="volver" id="avback">← Home</button><div class="av-eyebrow">BLOCK QUEST · EXPLORER 1</div><h2 class="tit">'+esc(title)+'</h2><p class="sub">'+esc(sub||"")+'</p><div id="avbody"></div></section>';
+  el.innerHTML='<section class="pantalla aventura"><button class="volver" id="avback">← Home</button><div class="av-eyebrow">LEARNING GAME · EXPLORER 1</div><h2 class="tit">'+esc(title)+'</h2><p class="sub">'+esc(sub||"")+'</p><div id="avbody"></div></section>';
   el.querySelector("#avback").onclick=function(){route("casa");};return el.querySelector("#avbody");
 }
 function error(el,e){el.innerHTML='<section class="pantalla"><h2>We could not save your progress</h2><p>Your original progress is safe. Free up storage space, then reopen the game.</p></section>';console.error(e);}
@@ -29,7 +29,7 @@ function home(container){
   var acc=box.querySelector("#av-home-actions");
   if(due)button(acc,E.data.active?"Continue exploring →":due==="inicial"?"Explore what you know →":"Explorer check-in →",function(){route("introDiag");},"btn-primario btn-grande");
   button(acc,m.paid?"Visit your village →":m.steps.some(function(s){return s.done;})?"Continue today's mission →":"Today's mission →",function(){route("aventura");},due?"btn-suave":"btn-primario btn-grande");
-  button(acc,"🗺️ Explore Block Quest",function(){route("explorar");},"btn-suave");
+  button(acc,"🗺️ Explore Learning Game",function(){route("explorar");},"btn-suave");
   button(acc,"🎒 Activity backpack",function(){route("mochila");},"btn-suave");
   if(!due){var p=document.createElement("p");p.className="nota";p.textContent="Next check-in · "+E.nextDate();box.appendChild(p);}
 }

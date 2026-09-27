@@ -73,7 +73,7 @@
     el.innerHTML =
       '<section class="portada">' +
         '<div class="portada-logo">' + logoSvg() + '</div>' +
-        '<h1 class="portada-tit">BLOCK QUEST</h1>' +
+        '<h1 class="portada-tit">LEARNING GAME</h1>' +
         '<p class="portada-sub">Reading &amp; Math</p>' +
         '<div class="portada-acc"></div>' +
       '</section>';
@@ -912,14 +912,14 @@
   pantallas.explorar = function (el) {
     var e = Alm.leer();
     var places = [
-      { id: "reading", x: 24, y: 48, icon: "📚", title: "READING LIBRARY", detail: "Reading games" },
-      { id: "math", x: 76, y: 48, icon: "🧮", title: "MATH WORKSHOP", detail: "Math games" },
-      { id: "quest", x: 50, y: 18, icon: "🏁", title: "MISSION PORTAL", detail: "Guided mission" }
+      { id: "reading", x: 24, y: 48, icon: "📚", title: "READING LIBRARY", detail: "Sight words · stories · spelling" },
+      { id: "math", x: 76, y: 48, icon: "🧮", title: "MATH WORKSHOP", detail: "Number facts · shapes · graphs" },
+      { id: "quest", x: 50, y: 18, icon: "🏁", title: "MISSION PORTAL", detail: "Today's adaptive mission" }
     ];
     el.innerHTML =
       '<section class="pantalla av-world-screen">' +
-        '<div class="av-world-head"><button class="volver" id="av-world-back">← Home</button><span class="av-eyebrow">BLOCK QUEST · EXPLORER</span><button class="av-bag-shortcut" id="av-world-bag">🎒 Activities</button></div>' +
-        '<h2 class="tit">Explore Block Quest</h2><p class="sub">Walk through a small block world of gardens, platforms and buildings. Choose an activity whenever you like.</p>' +
+        '<div class="av-world-head"><button class="volver" id="av-world-back">← Home</button><span class="av-eyebrow">LEARNING GAME · EXPLORER</span><button class="av-bag-shortcut" id="av-world-bag">🎒 Activities</button></div>' +
+        '<h2 class="tit">Explore Learning Game</h2><p class="sub">Walk through a small learning world of gardens, platforms and buildings. Choose an activity whenever you like.</p>' +
         '<div class="av-world-viewport" id="av-world" tabindex="0" role="application" aria-label="Block world. Use the arrow buttons to walk.">' +
           '<div class="av-world-ground" aria-hidden="true"></div><div class="av-world-keyboard" aria-hidden="true">' +
             [['ESC','1','2','3','4','5','6','7','8','9','0','⌫'],['TAB','Q','W','E','R','T','Y','U','I','O','P'],['CAPS','A','S','D','F','G','H','J','K','L'],['SHIFT','Z','X','C','V','B','N','M','↵'],['CTRL','☻','ALT','SPACE','ALT','←','↓','↑','→']].map(function(row){return '<div class="av-keyboard-row">'+row.map(function(key){return '<span class="av-world-key'+(key==='SPACE'?' av-key-space':'')+'">'+key+'</span>';}).join('')+'</div>';}).join('') +
@@ -945,10 +945,10 @@
       places.forEach(function (p) {
         var d = distance(p), b = scene.querySelector('[data-place="' + p.id + '"]');
         b.classList.toggle("av-place-near", d < 19);
-        b.querySelector(".av-place-action").textContent = d < 19 ? "Enter →" : "Walk closer";
+        b.querySelector(".av-place-action").textContent = d < 19 ? "Enter →" : "Tap to enter · walk optional";
         if (d < nearestDistance) { nearest = p; nearestDistance = d; }
       });
-      status.textContent = nearestDistance < 19 ? "You are near " + nearest.title + ". Tap Enter to explore!" : "Walk to the Reading Library, Math Workshop, or Mission Portal.";
+      status.textContent = nearestDistance < 19 ? "You are near " + nearest.title + ". Tap it to explore!" : "Tap a building to open it, or walk closer to explore the map.";
     }
     function frameMove(time) {
       if (!scene.isConnected) { frame = 0; return; }
@@ -979,7 +979,7 @@
     }
     function enter(id) {
       var p = places.find(function (x) { return x.id === id; });
-      if (!p || distance(p) >= 19) { status.textContent = "Walk a little closer to " + (p ? p.title : "that place") + "."; return; }
+      if (!p) return;
       if (id === "quest") irA("aventura");
       else irA("mochila", { mundo: id });
     }

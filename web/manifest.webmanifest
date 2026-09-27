@@ -1,6 +1,6 @@
 {
-  "name": "Block Quest — Reading & Math",
-  "short_name": "Block Quest",
+  "name": "Learning Game — Reading & Math",
+  "short_name": "Learning Game",
   "description": "Reading and Math practice built from Gabriel's own schoolwork.",
   "start_url": "./index.html",
   "scope": "./",
