@@ -168,8 +168,8 @@
         .then(function (r) {
           if (r.ok) {
             Alm.ponerModo("cuenta"); Alm.olvidar();
-            alert("Parent account created. Next, create Amy's child account from the Parent dashboard.");
-            return irA("avatar");
+            alert("Parent account created. Open Players in the Parent dashboard to create Amy's child account.");
+            return irA("panel");
           }
           pe.textContent = ERRORES[r.error] || r.error; pe.hidden = false;
           b.disabled = false; b.textContent = "Create parent account";
