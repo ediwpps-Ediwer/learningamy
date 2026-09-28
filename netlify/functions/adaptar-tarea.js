@@ -17,7 +17,13 @@ const schema = {
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") return reply(405, { error: "method_not_allowed" });
   const origin = event.headers && (event.headers.origin || event.headers.Origin);
-  if (origin && origin !== "https://learningamy.netlify.app") return reply(403, { error: "origin_not_allowed" });
+  const allowedOrigins = new Set([
+    "https://learningamy.netlify.app",
+    "https://dainty-churros-901cbd.netlify.app",
+    "http://localhost:8790",
+    "http://localhost:8791"
+  ]);
+  if (origin && !allowedOrigins.has(origin)) return reply(403, { error: "origin_not_allowed" });
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return reply(503, { error: "ai_not_configured", message: "La clave de OpenAI todavía no está configurada en Netlify." });
   if (!event.body || event.body.length > 6_000_000) return reply(413, { error: "request_too_large" });
