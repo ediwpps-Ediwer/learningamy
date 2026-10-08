@@ -187,7 +187,7 @@
       var first=taskSkill||reviews[0]||read[1], second=taskSkill===read[0]?read[1]:read[0];
       var keys=[first,second,math[0],read[0]];
       var phases=["recordar","aprender","resolver","demostrar"];
-      var token="mission-"+d;
+      var token="mission-"+d+"-"+(a.missionSeq||0);
       var steps=keys.map(function(k,i){var s=summary(k);return {skill:k,phase:phases[i],done:false,cursor:0,
         reason:(i===0&&reviews.length?"Scheduled review":s.n?"Recent observation: "+s.status:"This skill needs more observations"),
         level:s.level,questions:[pick(k,s.level,token,i*100),pick(k,s.level,token,i*100+40)],help:false};});
@@ -224,6 +224,7 @@
       if(!a.skippedMissions)a.skippedMissions=[];
       if(current)a.skippedMissions.push({mission:current,skippedAt:clock()});
       delete a.missions[today];
+      a.missionSeq=(a.missionSeq||0)+1;
       a.task=null;
       save();
       return mission();
