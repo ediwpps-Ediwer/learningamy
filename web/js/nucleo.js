@@ -78,7 +78,10 @@
           sesion = r.data.session;
           return traerFila().then(function () { return { ok: true }; });
         })
-        .catch(function (e) { return { error: String(e && e.message || e) }; });
+        .catch(function (e) {
+          var msg=String(e && e.message || e);
+          return { error: /failed to fetch|networkerror|network request failed/i.test(msg) ? "sin-conexion" : msg };
+        });
     }
 
     /* Crear cuenta. La hace el adulto desde su panel: esa es la autorización.
@@ -116,7 +119,10 @@
               });
           });
         })
-        .catch(function (e) { return { error: String(e && e.message || e) }; });
+        .catch(function (e) {
+          var msg=String(e && e.message || e);
+          return { error: /failed to fetch|networkerror|network request failed/i.test(msg) ? "sin-conexion" : msg };
+        });
     }
 
     function codigoNuevo() {
