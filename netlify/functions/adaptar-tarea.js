@@ -41,19 +41,39 @@ exports.handler = async function (event) {
   const inputText = JSON.stringify({ task: { title: String(task.title || "").slice(0, 100), subject: String(task.subject || "").slice(0, 20), skill: skills.has(task.skill) ? task.skill : "", notes: String(task.notes || "").slice(0, 500) }, diagnostic });
   let upstream;
   try {
-    upstream = await fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" }, body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-5.6-luna", store: false, reasoning: { effort: "none" }, max_output_tokens: 700,
-      instructions, input: [{ role: "user", content: [{ type: "input_text", text: inputText }, { type: "input_image", image_url: image, detail: "low" }] }],
+    upstream = await fetch("https://api.openai.com/v1/responses", { method: "POST", signal: AbortSignal.timeout(25000), headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" }, body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini", store: false, max_output_tokens: 2400,
+      instructions, input: [{ role: "user", content: [{ type: "input_text", text: inputText }, { type: "input_image", image_url: image, detail: "high" }] }],
       text: { format: { type: "json_schema", name: "task_adaptation", strict: true, schema } }
     }) });
-  } catch (_) { return reply(502, { error: "ai_unavailable" }); }
-  if (!upstream.ok) return reply(502, { error: "ai_request_failed" });
+  } catch (_) { return reply(502, { error: "ai_unavailable", message: "No se pudo conectar con OpenAI a tiempo. Intenta nuevamente." }); }
+  if (!upstream.ok) {
+    let failure={}; try { failure=await upstream.json(); } catch (_) {}
+    const code=failure.error && failure.error.code;
+    if (upstream.status===401) return reply(502,{error:"ai_invalid_key",message:"OpenAI rechazó la clave. Revisa OPENAI_API_KEY en Netlify y publica nuevamente."});
+    if (code==="insufficient_quota") return reply(502,{error:"ai_quota",message:"La cuenta de OpenAI no tiene cuota disponible. Revisa el saldo y los límites de la API."});
+    if (upstream.status===429) return reply(429,{error:"ai_busy",message:"OpenAI alcanzó su límite temporal. Espera un minuto y vuelve a intentar."});
+    if (code==="model_not_found" || upstream.status===403) return reply(502,{error:"ai_model_access",message:"La clave no tiene acceso al modelo. Revisa OPENAI_MODEL y los permisos de la clave en Netlify."});
+    return reply(502,{error:"ai_request_failed",message:"OpenAI rechazó la solicitud de análisis. Revisa la configuración del servicio.",upstreamStatus:upstream.status});
+  }
   let data;
   try { data = await upstream.json(); } catch (_) { return reply(502, { error: "ai_invalid_response" }); }
-  if (!data.output_text) return reply(502, { error: "ai_empty_response" });
+  if(data.status==="incomplete") return reply(502,{error:"ai_incomplete",message:"El análisis quedó incompleto. Intenta con menos fotos."});
+  const content=(Array.isArray(data.output)?data.output:[]).filter(x=>x.type==="message").flatMap(x=>Array.isArray(x.content)?x.content:[]);
+  if(content.some(x=>x.type==="refusal")) return reply(422,{error:"ai_refused",message:"No se pudo adaptar esta imagen. Revisa que sea una tarea legible."});
+  const output=content.filter(x=>x.type==="output_text" && typeof x.text==="string").map(x=>x.text).join("") || data.output_text;
+  if (!output) return reply(502, { error: "ai_empty_response",message:"OpenAI no devolvió un análisis. Intenta nuevamente." });
   let adaptation;
-  try { adaptation = JSON.parse(data.output_text); } catch (_) { return reply(502, { error: "ai_invalid_result" }); }
+  try { adaptation = JSON.parse(output); } catch (_) { return reply(502, { error: "ai_invalid_result" }); }
   if (!skills.has(adaptation.skill) || !["reading", "math"].includes(adaptation.subject)) return reply(502, { error: "ai_invalid_result" });
+  const phases=["recordar","aprender","resolver","demostrar"];
+  if (!Number.isInteger(adaptation.difficulty) || adaptation.difficulty<0 || adaptation.difficulty>2 ||
+      !["title","objective","adultCheck"].every(k=>typeof adaptation[k]==="string") ||
+      !Array.isArray(adaptation.steps) || adaptation.steps.length!==4 ||
+      !phases.every(p=>adaptation.steps.filter(s=>s && s.phase===p && typeof s.instruction==="string" && typeof s.game==="string").length===1) ||
+      !Array.isArray(adaptation.transfer) || adaptation.transfer.length!==2 || !adaptation.transfer.every(x=>typeof x==="string") ||
+      !Array.isArray(adaptation.uncertain) || !adaptation.uncertain.every(x=>typeof x==="string"))
+    return reply(502,{error:"ai_invalid_result",message:"El análisis no tiene todos los pasos necesarios. Intenta nuevamente."});
   return reply(200, { adaptation, usage: data.usage ? { input_tokens: data.usage.input_tokens, output_tokens: data.usage.output_tokens } : null });
 };
 function reply(statusCode, body) { return { statusCode, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }, body: JSON.stringify(body) }; }
