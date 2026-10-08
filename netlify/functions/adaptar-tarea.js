@@ -50,9 +50,13 @@ exports.handler = async function (event) {
   if (!upstream.ok) {
     let failure={}; try { failure=await upstream.json(); } catch (_) {}
     const code=failure.error && failure.error.code;
+    const type=failure.error && failure.error.type;
+    const hasCode=value=>code===value || type===value;
     if (upstream.status===401) return reply(502,{error:"ai_invalid_key",message:"OpenAI rechazó la clave. Revisa OPENAI_API_KEY en Netlify y publica nuevamente."});
-    if (code==="insufficient_quota") return reply(502,{error:"ai_quota",message:"La cuenta de OpenAI no tiene cuota disponible. Revisa el saldo y los límites de la API."});
-    if (upstream.status===429) return reply(429,{error:"ai_busy",message:"OpenAI alcanzó su límite temporal. Espera un minuto y vuelve a intentar."});
+    if (hasCode("credit_balance_exhausted")) return reply(402,{error:"ai_insufficient_credits",message:"Créditos insuficientes: OpenAI informa que el saldo de la API está agotado. Agrega créditos en OpenAI → Billing y vuelve a analizar la foto. No es un fallo del juego."});
+    if (hasCode("insufficient_quota")) return reply(402,{error:"ai_quota",message:"Saldo o cuota de OpenAI insuficiente: revisa los créditos de la API y los límites de gasto en OpenAI → Billing / Limits. El análisis está bloqueado por la cuenta de AI."});
+    if (upstream.status===429 && hasCode("rate_limit_exceeded")) return reply(429,{error:"ai_busy",message:"Límite temporal de solicitudes de OpenAI. Espera un minuto y vuelve a intentar. Este aviso no indica falta de créditos."});
+    if (upstream.status===429) return reply(429,{error:"ai_limit_unknown",message:"OpenAI limitó el análisis sin especificar la causa. Revisa Billing y Limits; no se pudo confirmar si faltan créditos o si es un límite temporal."});
     if (code==="model_not_found" || upstream.status===403) return reply(502,{error:"ai_model_access",message:"La clave no tiene acceso al modelo. Revisa OPENAI_MODEL y los permisos de la clave en Netlify."});
     return reply(502,{error:"ai_request_failed",message:"OpenAI rechazó la solicitud de análisis. Revisa la configuración del servicio.",upstreamStatus:upstream.status});
   }

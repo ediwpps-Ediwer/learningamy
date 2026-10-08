@@ -14,15 +14,30 @@ test('Incomplete output cannot be approved',async()=>{const r=await service({sta
 test('Malformed plan cannot reach rendering',async()=>{const r=await service({output:[{type:'message',content:[{type:'output_text',text:JSON.stringify({...plan,steps:[]})}]}]}).run();assert.equal(JSON.parse(r.body).error,'ai_invalid_result');});
 test('Parent buttons save, analyze, persist and approve using the actual learning engine',async()=>{
   const L=require('../web/js/aprendizaje.js'), state={esmeraldas:0,esmeraldasGanadasTotal:0};
-  L.create(state);const nodes=new Map(), buttons=[];let sent,photo='data:image/png;base64,YQ==';
+  L.create(state);const nodes=new Map(), buttons=[];let apiError=null;let sent,photo='data:image/png;base64,YQ==';
   function node(){return {value:'',dataset:{},hidden:false,innerHTML:'',textContent:'',appendChild(){},setAttribute(){},scrollIntoView(){}};}
   const el=node();el.querySelector=s=>{if(!nodes.has(s))nodes.set(s,node());return nodes.get(s);};
   const w={APRENDIZAJE:L,DATOS:{},NUCLEO:{Util:{esc:s=>s},Bus:{emitir(){}},Almacen:{leer:()=>state,guardar(){},leerImagenTarea:()=>photo,guardarImagenTarea:x=>{photo=x;return true;}}},JUEGOS:{ui:{boton:(text,cls,fn)=>{const b={text,fn,disabled:false};buttons.push(b);return b;}}}};
-  vm.runInNewContext(fs.readFileSync('web/js/aventura.js','utf8'),{window:w,document:{createElement:node},console,AbortSignal,setTimeout,clearTimeout,fetch:async(url,opts)=>{sent=JSON.parse(opts.body);return {ok:true,json:async()=>({adaptation:plan})};}});
+  vm.runInNewContext(fs.readFileSync('web/js/aventura.js','utf8'),{window:w,document:{createElement:node},console,AbortSignal,setTimeout,clearTimeout,fetch:async(url,opts)=>{sent=JSON.parse(opts.body);if(apiError)return {ok:false,json:async()=>apiError};return {ok:true,json:async()=>({adaptation:plan})};}});
   w.AVENTURA.panel(el);
   el.querySelector('#av-task-title').value='Worksheet';el.querySelector('#av-task-notes').value='Five blocks';
   const save=buttons.find(b=>b.text.startsWith('Save task'));save.fn();assert.equal(state.aprendizaje.task.title,'Worksheet');
   const analyze=buttons.find(b=>b.text==='Analyze task with AI');await analyze.fn({currentTarget:analyze});
   assert.equal(sent.task.notes,'Five blocks');assert.equal(state.aprendizaje.task.analysis.title,plan.title);assert.equal(state.aprendizaje.task.adaptation,null);assert.equal(analyze.disabled,false);
   buttons.find(b=>b.text==='Approve for the next mission').fn();assert.equal(state.aprendizaje.task.adaptation.title,plan.title);
+  apiError={error:'ai_insufficient_credits',message:'Créditos insuficientes. Agrega saldo a la API.'};
+  await analyze.fn({currentTarget:analyze});
+  assert.equal(el.querySelector('#av-task-status').textContent,apiError.message);
+  assert.equal(analyze.disabled,false);assert.equal(photo,'data:image/png;base64,YQ==');
+});
+
+for(const field of ['code','type']) test('Credit exhaustion in '+field+' is distinguished from rate limit',async()=>{
+  const r=await service({error:{[field]:'credit_balance_exhausted'}},429).run();
+  assert.equal(r.statusCode,402);assert.equal(JSON.parse(r.body).error,'ai_insufficient_credits');
+  assert.match(JSON.parse(r.body).message,/Créditos insuficientes/);
+});
+test('Explicit rate limit is temporary, unknown 429 is not diagnosed as no credit',async()=>{
+  const temporary=await service({error:{code:'rate_limit_exceeded'}},429).run();
+  assert.equal(JSON.parse(temporary.body).error,'ai_busy');
+  const unknown=await service({},429).run();assert.equal(JSON.parse(unknown.body).error,'ai_limit_unknown');
 });
