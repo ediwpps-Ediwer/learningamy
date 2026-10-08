@@ -208,7 +208,15 @@ function reducirFotos(files,done){
 }
 function panel(el){
   var E=engine(),a=E.data;
-  el.innerHTML='<h3 class="panel-h3">Learning plan</h3><p class="nota">Explorer 1. New check-ins are kept separate from earlier history and rewards. They are not school scores.</p>'+
+  function grado(mundo){
+    var rs=Object.keys(L.skills).filter(function(k){return L.skills[k].mundo===mundo;}).map(function(k){return E.summary(k);}).filter(function(r){return r.pct!==null;}), pct=rs.length?Math.round(rs.reduce(function(t,r){return t+r.pct;},0)/rs.length):null, level=rs.length?Math.max.apply(null,rs.map(function(r){return r.level;})):null, transfer=rs.some(function(r){return r.status==="Transfer observed";});
+    if(pct===null)return {grade:"Not enough data",pct:null,note:"Complete the diagnostic to estimate this area."};
+    var grade=level===0?"Kindergarten":level===1?"1st grade":(transfer&&pct>=90?"3rd grade":"2nd grade");
+    return {grade:grade,pct:pct,note:(level>=2?"At or above the 2nd-grade target.":"Keep practicing the next skills in the daily missions.")};
+  }
+  function gradoCard(title,mundo,icon){var g=grado(mundo);return '<article class="av-grade-card"><span class="av-grade-icon">'+icon+'</span><div><b>'+title+'</b><strong>'+g.grade+'</strong><span>'+(g.pct===null?"—":g.pct+"% observed accuracy")+'</span><small>'+g.note+'</small></div></article>';}
+  el.innerHTML='<h3 class="panel-h3">Learning plan</h3><p class="nota">Explorer 1. New check-ins are kept separate from earlier history and rewards. They are not school scores.</p>'+ 
+    '<h3 class="panel-h3">Learning level snapshot</h3><p class="nota">Informal estimate from recent game evidence. The target is 2nd grade; this is not a school certification.</p><div class="av-grade-grid">'+gradoCard("Reading","reading","📚")+gradoCard("Math","math","🔢")+'</div>'+ 
     '<p>Next check-in: <b>'+esc(E.due()?"Available when you return":E.nextDate()||"Initial check-in pending")+'</b></p>'+
     '<div class="av-report">'+Object.keys(L.skills).map(function(k){var s=E.summary(k);return '<article><strong>'+L.skills[k].nombre+'</strong><p>'+s.status+'</p><p class="nota">'+s.n+' independent responses at activity level '+s.referenceLevel+' · '+(s.pct===null?"no score":s.pct+"%")+" · "+s.help+" with support · "+s.pending+' unverified</p><p class="nota">Review: '+(a.reviews[k]?L.day(a.reviews[k].due):"not scheduled")+'</p></article>';}).join("")+'</div>'+
     '<h3 class="panel-h3">Saved check-ins</h3><ul>'+a.cycles.map(function(c){return '<li>'+esc((c.type==="inicial"?"Initial":c.type==="semanal"?"Weekly":"Four-week review"))+" · "+L.day(c.started)+" · "+c.cursor+"/"+c.questions.length+" · "+(c.completed?"complete":"paused")+'</li>';}).join("")+'</ul>'+
