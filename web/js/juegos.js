@@ -2089,6 +2089,23 @@
      EXPORT
      ======================================================================== */
 
+  function opcionesRapidas(el,titulo,preguntas,destreza,fin){
+    var m=ui.marco(el,titulo,"Choose the best answer"),i=0,ok=0,gan=0;
+    function pintar(){
+      if(i>=preguntas.length)return ui.fin(el,{esmeraldas:gan,aciertos:ok,total:preguntas.length},function(){fin({aciertos:ok,total:preguntas.length,esmeraldas:gan});});
+      var q=preguntas[i];m.cuerpo.innerHTML="";m.pie.innerHTML="";
+      var visual=document.createElement("div");visual.className="palabra-grande";visual.textContent=q.visual||"";m.cuerpo.appendChild(visual);
+      m.cuerpo.appendChild(ui.consigna(q.prompt,q.prompt,destreza));
+      var box=document.createElement("div");box.className="opciones-num";
+      U.mezclar(q.options.slice()).forEach(function(option){var b=document.createElement("button");b.className="opcion-num";b.textContent=option;b.addEventListener("click",function(){var bien=option===q.answer;box.querySelectorAll("button").forEach(function(x){x.disabled=true;});b.classList.add(bien?"ok":"mal");if(bien){ok++;gan+=m.premiar(b,"verde");}else m.premiar(b,"rojo");Pro.registrar(destreza,bien,{item:q.id||q.prompt});m.pie.innerHTML="";m.pie.appendChild(ui.boton("Next","btn-primario",function(){i++;pintar();}));});box.appendChild(b);});
+      m.cuerpo.appendChild(box);
+    }
+    pintar();
+  }
+  var calendario={id:"calendario",nombre:"Calendar",mundo:"math",destreza:"calendario",iniciar:function(el,cfg,fin){var days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],months=["January","February","March","April","May","June","July","August","September","October","November","December"],qs=[];days.forEach(function(x,i){qs.push({id:"day"+i,visual:"📅",prompt:"Which day comes after "+x+"?",answer:days[(i+1)%7],options:[days[(i+1)%7],days[(i+2)%7],days[(i+6)%7]]});});months.slice(0,6).forEach(function(x,i){qs.push({id:"month"+i,visual:"🗓️",prompt:"Which month comes after "+x+"?",answer:months[i+1],options:[months[i+1],months[(i+2)%12],months[(i+11)%12]]});});opcionesRapidas(el,"Days and months",U.tomar(U.mezclar(qs),cfg&&cfg.rondas||6),calendario.destreza,fin);}};
+  var reloj={id:"reloj",nombre:"Time",mundo:"math",destreza:"reloj",iniciar:function(el,cfg,fin){var qs=[{visual:"🕒 3:00",prompt:"What time is shown?",answer:"3:00",options:["3:00","6:00","12:00"]},{visual:"🕘 9:30",prompt:"What time is shown?",answer:"9:30",options:["9:30","3:30","9:00"]},{visual:"🕧 12:15",prompt:"What time is shown?",answer:"12:15",options:["12:15","12:30","1:15"]},{visual:"🕕 6:45",prompt:"What time is shown?",answer:"6:45",options:["6:45","5:45","6:15"]}];opcionesRapidas(el,"Digital and analog clocks",U.tomar(U.mezclar(qs),cfg&&cfg.rondas||4),reloj.destreza,fin);}};
+  var familias={id:"familias",nombre:"Word families",mundo:"reading",destreza:"familias-palabras",iniciar:function(el,cfg,fin){var qs=[{visual:"-at",prompt:"Choose a word with the same ending as cat",answer:"hat",options:["hat","sun","pig"]},{visual:"-an",prompt:"Choose a word with the same ending as fan",answer:"man",options:["man","map","fish"]},{visual:"-ig",prompt:"Choose a word with the same ending as pig",answer:"wig",options:["wig","cat","run"]},{visual:"-op",prompt:"Choose a word with the same ending as hop",answer:"mop",options:["mop","sun","cake"]},{visual:"-ake",prompt:"Choose a word with the same ending as cake",answer:"lake",options:["lake","kit","fish"]},{visual:"-ight",prompt:"Choose a word with the same ending as light",answer:"night",options:["night","map","hot"]}];opcionesRapidas(el,"Word families",U.tomar(U.mezclar(qs),cfg&&cfg.rondas||6),familias.destreza,fin);}};
+
   global.JUEGOS = {
     lecturaPalabras: lecturaPalabras,
     sopaLetras: sopaLetras,
@@ -2099,6 +2116,9 @@
     monedas: monedas,
     graficas: graficas,
     formas: formas,
+    calendario: calendario,
+    reloj: reloj,
+    familias: familias,
     Arte: Arte,
     ui: ui
   };

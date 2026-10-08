@@ -868,7 +868,19 @@
         id: "formas", tit: "Shapes", sub: "2D and 3D",
         etiqueta: "Practice shapes", juego: "formas", cfg: { rondas: 8 }
       });
+      lista.push({
+        id: "calendario", tit: "Days & Months", sub: "Calendar order and dates",
+        juego: "calendario", cfg: { rondas: 6 }
+      });
+      lista.push({
+        id: "reloj", tit: "Clock Lab", sub: "Digital and analog time",
+        juego: "reloj", cfg: { rondas: 4 }
+      });
     }
+    if (mundo === "reading") lista.push({
+      id: "familias", tit: "Word Families", sub: "Choose a spelling ending and read rhyming words",
+      juego: "familias", cfg: { rondas: 6 }
+    });
     return lista;
   }
 

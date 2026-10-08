@@ -9,7 +9,10 @@
     operaciones: {nombre:"Addition and subtraction", en:"Build a bridge", icon:"🧱", mundo:"math", modo:"calculo", ayuda:"Use blocks or a number line. Make ten when it helps.", es:"Usá bloques o una recta numérica. Podés completar diez."},
     numeros: {nombre:"Place value", en:"Block towers", icon:"🏗️", mundo:"math", modo:"valor-posicional", ayuda:"Ten ones make one ten. Count tens, then ones.", es:"Diez unidades forman una decena. Contá decenas y unidades."},
     formas: {nombre:"Shape attributes", en:"Shape garden", icon:"🔷", mundo:"math", modo:"geometria", ayuda:"Count straight sides and corners. Turn the shape: its name stays the same.", es:"Contá lados rectos y vértices. Girar una figura no cambia su nombre."},
-    graficas: {nombre:"Graph interpretation", en:"Weather station", icon:"📊", mundo:"math", modo:"datos", ayuda:"Check the labels. Count each bar. Compare the amounts.", es:"Mirá las etiquetas y contá cada barra antes de comparar."}
+    graficas: {nombre:"Graph interpretation", en:"Weather station", icon:"📊", mundo:"math", modo:"datos", ayuda:"Check the labels. Count each bar. Compare the amounts.", es:"Mirá las etiquetas y contá cada barra antes de comparar."},
+    calendario: {nombre:"Days and months", en:"Days & Months", icon:"📅", mundo:"math", modo:"calendario", nuevo:true, ayuda:"Put days and months in order and use them to talk about dates.", es:"Ordená los días y los meses para hablar de fechas."},
+    reloj: {nombre:"Time", en:"Clock Lab", icon:"🕒", mundo:"math", modo:"reloj", nuevo:true, ayuda:"Read the hands and match the time on the digital clock.", es:"Leé las agujas y elegí la hora digital."},
+    familias: {nombre:"Word families", en:"Word Families", icon:"🔤", mundo:"reading", modo:"familias", nuevo:true, ayuda:"Read the ending and find another word with the same sound.", es:"Leé la terminación y buscá otra palabra con el mismo sonido."}
   };
   var STORIES = [
     ["Sam has a red bag. He puts a map in the bag. Then he walks to the park.","What does Sam put in the bag?","a map",["a hat","a map","a cup"]],
@@ -65,7 +68,7 @@
       var ids=Object.keys(SKILLS).filter(function(k){return SKILLS[k].mundo===mundo;});
       var task=a.task||TASKS.find(function(t){return t.id===a.settings.task;});
       return ids.sort(function(x,y){
-        function score(k){var s=summary(k); return forced.indexOf(k)>=0?-100:task&&task.skill===k?-90:s.pct===null?-20:s.pct;}
+        function score(k){var s=summary(k); return forced.indexOf(k)>=0?-100:task&&task.skill===k?-90:s.pct===null?(SKILLS[k].nuevo?20:-20):s.pct;}
         return score(x)-score(y);
       });
     }
@@ -74,16 +77,16 @@
       var completed=a.cycles.filter(function(c){return c.completed;});
       if(!completed.length) return "inicial";
       var last=completed[completed.length-1];
-      var broad=completed.filter(function(c){return c.type!=="semanal";}).slice(-1)[0];
-      if(day(clock())>=day(addDays(broad.completed,28))) return "revision";
-      if(day(clock())>=day(addDays(last.completed,7))) return "semanal";
+      var played=new Set(a.events.filter(function(e){return e.t>last.completed;}).map(function(e){return e.day;}));
+      if(played.size>=7) return "semanal";
       return null;
     }
     function nextDate() {
       var complete=a.cycles.filter(function(c){return c.completed;});
       if(!complete.length) return null;
-      var last=complete[complete.length-1], broad=complete.filter(function(c){return c.type!=="semanal";}).slice(-1)[0];
-      return day(Math.min(addDays(last.completed,7),addDays(broad.completed,28)));
+      var last=complete[complete.length-1];
+      var played=new Set(a.events.filter(function(e){return e.t>last.completed;}).map(function(e){return e.day;})).size;
+      return "after "+Math.max(0,7-played)+" play days";
     }
     function generate(skill,level,token,index) {
       var n=seed(token+":"+skill+":"+index), q={skill:skill,level:level,mode:SKILLS[skill].modo,kind:"choice"};
@@ -109,6 +112,16 @@
         var forms=[["triangle",3,3],["square",4,4],["pentagon",5,5],["hexagon",6,6]], f=forms[n%(level===0?2:4)];
         q.shape=f[0]; q.prompt=level===2?"How many corners does this shape have?":"How many straight sides does this shape have?";
         q.answer=level===2?f[2]:f[1]; q.kind="number"; q.key=skill+":"+f[0]+":"+level;
+      } else if(skill==="calendario") {
+        var days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"], months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+        var useMonths=n%2===0, list=useMonths?months:days, ix=n%(list.length-1), answer=list[ix+1];
+        q.prompt="What comes after "+list[ix]+"?"; q.answer=answer; q.options=[answer,list[(ix+2)%list.length],list[(ix+list.length-1)%list.length]]; q.visual=useMonths?"🗓️":"📅"; q.key=skill+":"+list[ix];
+      } else if(skill==="reloj") {
+        var clocks=[["3:00","6:00","12:00"],["9:30","3:30","9:00"],["12:15","12:30","1:15"],["6:45","5:45","6:15"]], cl=clocks[n%clocks.length];
+        q.prompt="What time is shown?"; q.answer=cl[0]; q.options=cl.slice(); q.visual="🕒 "+cl[0]; q.key=skill+":"+cl[0];
+      } else if(skill==="familias") {
+        var fam=[["cat","hat","sun","pig"],["fan","man","map","fish"],["pig","wig","cat","run"],["hop","mop","sun","cake"],["cake","lake","kit","fish"],["light","night","map","hot"]], pair=fam[n%fam.length];
+        q.prompt="Choose a word with the same ending as "+pair[0]+"."; q.answer=pair[1]; q.options=[pair[1],pair[2],pair[3]]; q.visual="-"+pair[0].slice(Math.max(0,pair[0].length-2)); q.key=skill+":"+pair[0];
       } else {
         var xg=1+n%7, yg=1+Math.floor(n/19)%7;
         q.graph=[{label:"Torches",value:xg},{label:"Boats",value:yg}];
@@ -128,7 +141,8 @@
       type=type||due()||"revision";
       var skills=type==="semanal"?priorities("reading").slice(0,2).concat(priorities("math").slice(0,1)):Object.keys(SKILLS);
       var c={id:"cycle-"+clock()+"-"+a.cycles.length,type:type,started:clock(),bank:"2026-09-v1",skills:skills,questions:[],cursor:0,results:[],completed:null,paid:false};
-      skills.forEach(function(k){ for(var j=0;j<(type==="semanal"?2:3);j++) c.questions.push(pick(k,summary(k).level,c.id,j,c.questions.map(function(q){return q.key;}))); });
+      // El chequeo de siete días es una muestra rápida: una pregunta por destreza priorizada.
+      skills.forEach(function(k){ var count=type==="semanal"?1:(k==="calendario"||k==="reloj"||k==="familias"?2:3); for(var j=0;j<count;j++) c.questions.push(pick(k,summary(k).level,c.id,j,c.questions.map(function(q){return q.key;}))); });
       a.cycles.push(c);a.active=c.id;save();return c;
     }
     function record(q,result,help,evaluator,phase,id,response) {
