@@ -1599,11 +1599,14 @@
     if (m !== "cuenta") return irA("bienvenida"); // primera vez: que elija
 
     app.innerHTML = '<p class="cargando">Loading…</p>';
-    N.Auth.restaurar().then(function () {
+    // La red de autenticación no debe dejar la pantalla bloqueada para siempre.
+    var limite = new Promise(function (resolve) { setTimeout(function () { resolve({ timeout: true }); }, 8000); });
+    Promise.race([N.Auth.restaurar(), limite]).then(function (resultado) {
+      if (resultado && resultado.timeout) return irA("entrar");
       if (!N.Auth.haySesion()) return irA("entrar");
       Alm.adoptarRemoto();   // si otro aparato tiene más avance, se toma ese
       rutear();
-    });
+    }).catch(function () { irA("entrar"); });
   }
 
   /* a dónde va alguien que ya entró */
