@@ -230,7 +230,7 @@ function panel(el){
   el.querySelector("#av-task-notes").value=savedTask.notes||"";
   var photo=N.Almacen.leerImagenTarea(); if(photo){var pv=el.querySelector("#av-photo-preview");pv.src=photo;pv.hidden=false;}
   el.querySelector("#av-photo").onchange=function(ev){var files=ev.target.files;if(!files||!files.length)return;var count=Math.min(files.length,5);reducirFotos(files,function(data){var pv=el.querySelector("#av-photo-preview");pv.src=data;pv.hidden=false;pv.dataset.data=data;el.querySelector("#av-task-status").textContent=count+" photo"+(count===1?"":"s")+" ready. Press Save task before analyzing.";});};
-  button(el.querySelector(".av-task-upload"),"Save task for later review",function(){var pv=el.querySelector("#av-photo-preview"),data=pv.dataset.data||photo;L.setTask({title:el.querySelector("#av-task-title").value,subject:el.querySelector("#av-task-subject").value,skill:el.querySelector("#av-task-skill").value,notes:el.querySelector("#av-task-notes").value,imageKey:data?"local":null});if(data)N.Almacen.guardarImagenTarea(data);el.querySelector("#av-task-status").textContent="Task saved on this device. You can now analyze it with AI.";}, "btn-suave");
+  button(el.querySelector(".av-task-upload"),"Save task and make it active",function(){var pv=el.querySelector("#av-photo-preview"),data=pv.dataset.data||photo;L.setTask({title:el.querySelector("#av-task-title").value,subject:el.querySelector("#av-task-subject").value,skill:el.querySelector("#av-task-skill").value,notes:el.querySelector("#av-task-notes").value,imageKey:data?"local":null});if(data)N.Almacen.guardarImagenTarea(data);el.querySelector("#av-task-status").textContent="Task saved and active for the next mission. You can analyze it with AI for a richer adaptation.";}, "btn-suave");
   var aiBox=document.createElement("section");aiBox.id="av-ai-result";aiBox.setAttribute("aria-live","polite");
   function showPlan(plan,applied){
     if(!plan)return;
@@ -267,6 +267,7 @@ function panel(el){
     a.targets={test:el.querySelector("#av-test").value.trim(),target:el.querySelector("#av-target").value.trim(),date:el.querySelector("#av-target-date").value};
     N.Almacen.guardar();el.querySelector("#av-saved").textContent="Saved. The school goal is not calculated from game results.";
   },"btn-primario");
+  button(acc,"Advance to the next mission",function(){E.advanceMission();el.querySelector("#av-saved").textContent="Advanced. The child will see the next mission when returning to the game.";});
   button(acc,"Start a new check-in and keep previous results",function(){E.start("revision");route("introDiag");});
   button(acc,"Download previous backup",function(){
     var txt=N.Almacen.respaldoAprendizaje();if(!txt){el.querySelector("#av-saved").textContent="No previous backup is available on this device.";return;}

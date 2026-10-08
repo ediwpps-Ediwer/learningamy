@@ -219,6 +219,15 @@
       save(); return a.task;
     }
     function clearTask() { a.task=null; save(); }
+    function advanceMission() {
+      var today=day(clock()),current=a.missions[today];
+      if(!a.skippedMissions)a.skippedMissions=[];
+      if(current)a.skippedMissions.push({mission:current,skippedAt:clock()});
+      delete a.missions[today];
+      a.task=null;
+      save();
+      return mission();
+    }
     function build(choice) {
       var m=mission();if(m.paid||!m.steps.every(function(s){return s.done;}))return false;
       if(["garden","library","bridge"].indexOf(choice)<0)return false;
@@ -226,7 +235,7 @@
       state.esmeraldas+=20;state.esmeraldasGanadasTotal+=20;save();return true;
     }
     return {data:a,summary:summary,priorities:priorities,due:due,nextDate:nextDate,start:start,answer:answer,rewardCycle:rewardCycle,
-      mission:mission,answerMission:answerMission,finishPractice:finishPractice,expose:expose,build:build,setTask:setTask,clearTask:clearTask,generate:generate,pick:pick,record:record};
+      mission:mission,answerMission:answerMission,finishPractice:finishPractice,expose:expose,build:build,setTask:setTask,clearTask:clearTask,advanceMission:advanceMission,generate:generate,pick:pick,record:record};
   }
   var api={create:create,skills:SKILLS,tasks:TASKS,day:day,addDays:addDays};
   if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.APRENDIZAJE=api;
