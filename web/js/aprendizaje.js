@@ -182,7 +182,10 @@
       var d=day(clock()); if(a.missions[d])return a.missions[d];
       var read=priorities("reading"), math=priorities("math");
       var reviews=Object.keys(a.reviews).filter(function(k){return day(a.reviews[k].due)<=d;}).sort(function(x,y){return a.reviews[x].due-a.reviews[y].due;});
-      var keys=[reviews[0]||read[1],read[0],math[0],read[0]];
+      // Una tarea aprobada entra primero en la misión siguiente; después siguen práctica y transferencia.
+      var taskSkill=a.task&&SKILLS[a.task.skill]?a.task.skill:null;
+      var first=taskSkill||reviews[0]||read[1], second=taskSkill===read[0]?read[1]:read[0];
+      var keys=[first,second,math[0],read[0]];
       var phases=["recordar","aprender","resolver","demostrar"];
       var token="mission-"+d;
       var steps=keys.map(function(k,i){var s=summary(k);return {skill:k,phase:phases[i],done:false,cursor:0,
