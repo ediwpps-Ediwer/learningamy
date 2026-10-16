@@ -83,3 +83,68 @@
 .av-read-ok  { color: var(--esmeralda); margin: 12px 0 0; font-weight: 700; }
 .av-read-mal { color: var(--rojo); margin: 12px 0 0; font-weight: 700; }
 .av-approve { margin-top: 12px; }
+
+/* ============================================================================
+   PASADA DE ARTE
+   Un solo idioma visual: píxeles dibujados a mano. Nada de emoji, que se ve
+   distinto en cada aparato y rompía la coherencia.
+   ========================================================================== */
+
+.ico { display: block; image-rendering: pixelated; }
+
+/* --- la aldea sobre un horizonte, no flotando en el vacío --- */
+.av-escena {
+  position: relative; width: 100%; border-radius: 14px; overflow: hidden;
+  border: 3px solid var(--linea); min-height: 168px;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.av-escena-chica { min-height: 128px; }
+.horizonte {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  image-rendering: pixelated;
+}
+.av-village {
+  position: relative; display: flex; align-items: flex-end; justify-content: center;
+  gap: 6px; flex-wrap: wrap; padding: 0 12px 14px; width: 100%;
+}
+.av-village > span { line-height: 0; filter: drop-shadow(0 3px 0 rgba(0,0,0,.35)); }
+.av-ghost { opacity: .28; }
+
+/* --- el avatar es el protagonista de la portada, no una miniatura --- */
+.av-heroe {
+  position: relative; display: flex; align-items: flex-end; gap: 14px;
+  padding: 0 14px 10px;
+}
+.av-heroe-av { line-height: 0; filter: drop-shadow(0 4px 0 rgba(0,0,0,.4)); }
+.av-heroe-txt { padding-bottom: 8px; }
+.av-heroe-txt h2 {
+  font-family: var(--f-pixel); font-size: clamp(15px, 4.2vw, 20px);
+  margin: 0; color: var(--texto);
+}
+.av-heroe-txt p { margin: 2px 0 0; color: var(--suave); font-size: 14px; }
+
+/* --- íconos de píxel en su lugar --- */
+.reto-icono { display: flex; align-items: center; }
+.av-step-icon { display: flex; align-items: center; justify-content: center; }
+.av-grade-icon { display: flex; align-items: center; }
+.av-celebrate { display: flex; gap: 14px; justify-content: center; align-items: center; }
+.hud-racha { display: inline-flex; align-items: center; gap: 4px; }
+.hud-papa { display: inline-flex; align-items: center; justify-content: center; }
+.cofre-emoji, .premio-emoji { display: flex; align-items: center; }
+
+/* --- la fuente de píxeles solo en títulos grandes ---
+   Silkscreen a 9–12 px cuesta leerla, y esta app es para un chico cuyo
+   problema es justamente leer. Las etiquetas chicas pasan a Baloo. --- */
+.nivel-tag, .conjunto-tag, .vel-tag, .mod-n, .tarjeta-et,
+.opt-et, .bp-tag, .chall-tag, .picto-unidad, .carrera-ppm,
+.retos-tit, .panel-h3, .repaso-tit, .estr-tarjeta h4 {
+  font-family: var(--f-ui);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.nivel-tag, .conjunto-tag, .vel-tag, .bp-tag, .chall-tag { font-size: 11px; }
+.mod-n, .picto-unidad, .carrera-ppm { font-size: 11px; text-transform: none; }
+.tarjeta-et, .opt-et { font-size: 12px; }
+.retos-tit, .panel-h3, .repaso-tit, .estr-tarjeta h4 { font-size: 14px; }
+.av-yo { line-height: 0; filter: drop-shadow(0 4px 0 rgba(0,0,0,.45)); margin-right: 4px; }

@@ -23,14 +23,14 @@ function home(container){
   var box=document.createElement("section");box.className="av-home";
   box.innerHTML='<div class="av-eyebrow">YOUR VILLAGE</div><h2 class="tit-chico">A little adventure, every day</h2>'+
     '<p>Explore, learn and build. You can pause any time.</p>'+
-    '<div class="av-village" aria-label="Your village">'+(E.data.buildings.length?E.data.buildings.slice(-12).map(function(b){return '<span title="'+esc(b.day)+'">'+({garden:"🌳",library:"🏠",bridge:"🌉"}[b.type])+'</span>';}).join(""):'<span>🏕️</span><span class="av-ghost">🌳</span><span class="av-ghost">🏠</span>')+'</div><div class="acc" id="av-home-actions"></div>'+
+    '<div class="av-escena">'+ICONOS.horizonte()+'<div class="av-village" aria-label="Your village">'+'<span class="av-yo">'+N.Avatar.svg(N.Almacen.leer().jugador.avatar,64)+'</span>'+(E.data.buildings.length?E.data.buildings.slice(-12).map(function(b){return '<span title="'+esc(b.day)+'">'+ICONOS.svg(b.type,54)+'</span>';}).join(""):'<span>'+ICONOS.svg("carpa",54)+'</span>'+'<span class="av-ghost">'+ICONOS.svg("arbol",54)+'</span>'+'<span class="av-ghost">'+ICONOS.svg("casa",54)+'</span>')+'</div></div><div class="acc" id="av-home-actions"></div>'+
     '<p class="nota">School-material review. Every completed mission adds a building.</p>';
   container.insertBefore(box,container.querySelector(".mundos"));
   var acc=box.querySelector("#av-home-actions");
   if(due)button(acc,E.data.active?"Continue exploring →":due==="inicial"?"Explore what you know →":"Explorer check-in →",function(){route("introDiag");},"btn-primario btn-grande");
   button(acc,m.paid?"Visit your village →":m.steps.some(function(s){return s.done;})?"Continue today's mission →":"Today's mission →",function(){route("aventura");},due?"btn-suave":"btn-primario btn-grande");
-  button(acc,"🗺️ Explore Learning Game",function(){route("explorar");},"btn-suave");
-  button(acc,"🎒 Activity backpack",function(){route("mochila");},"btn-suave");
+  button(acc,"Explore Learning Game",function(){route("explorar");},"btn-suave");
+  button(acc,"Activity backpack",function(){route("mochila");},"btn-suave");
   if(!due){var p=document.createElement("p");p.className="nota";p.textContent="Next check-in · "+E.nextDate();box.appendChild(p);}
 }
 function intro(el){
@@ -132,7 +132,7 @@ function diagnostic(el){
     if(c.completed){
       E.rewardCycle(c);
       var body=shell(el,"Your adventure is ready!","You explored new places. Now let's build.");
-      body.innerHTML='<div class="av-celebrate">🗺️ ✨ 🏕️</div><p>+15 gems · Your answers help choose your next missions.</p><p class="nota">Some observations are still unverified. They are not errors. See details in the Parent Dashboard.</p>';
+      body.innerHTML='<div class="av-celebrate">'+ICONOS.svg("mapa",46)+ICONOS.svg("esmeralda",46)+ICONOS.svg("carpa",46)+'</div><p>+15 gems · Your answers help choose your next missions.</p><p class="nota">Some observations are still unverified. They are not errors. See details in the Parent Dashboard.</p>';
       button(body,"Start my mission →",function(){route("aventura");},"btn-primario btn-grande");return;
     }
     var q=c.questions[c.cursor],s=L.skills[q.skill];
@@ -151,16 +151,16 @@ function mission(el){
   var body=shell(el,"Build your village","Four small steps. One new building. +20 gems.");
   var activeTask=m.task&&typeof m.task==="object"?m.task:null;
   body.innerHTML=(activeTask&&activeTask.objective?'<article class="av-ai-card"><b>'+esc(activeTask.title)+'</b><p>'+esc(activeTask.objective)+'</p></article>':'')+'<p class="nota">'+(m.provisional?"Provisional plan: some diagnostic observations are still unverified.":"Plan based on saved observations.")+'</p>'+
-    '<div class="av-village">'+(E.data.buildings.length?E.data.buildings.slice(-12).map(function(b){return '<span>'+({garden:"🌳",library:"🏠",bridge:"🌉"}[b.type])+'</span>';}).join(""):"🏕️")+'</div><div id="av-steps" class="av-steps"></div>';
+    '<div class="av-escena av-escena-chica">'+ICONOS.horizonte()+'<div class="av-village">'+(E.data.buildings.length?E.data.buildings.slice(-12).map(function(b){return '<span>'+ICONOS.svg(b.type,44)+'</span>';}).join(""):'<span>'+ICONOS.svg("carpa",44)+'</span>')+'</div></div>'+'<div id="av-steps" class="av-steps"></div>';
   var names={recordar:"Remember",aprender:"Learn",resolver:"Solve",demostrar:"Show what you learned"},next=m.steps.findIndex(function(s){return !s.done;});
   m.steps.forEach(function(s,i){
     var row=document.createElement("div");row.className="av-step"+(s.done?" av-done":"");
-    row.innerHTML='<span class="av-step-icon">'+(s.done?"✓":L.skills[s.skill].icon)+'</span><div><strong>'+names[s.phase]+' · '+L.skills[s.skill].en+'</strong><p class="nota">'+esc(missionReason(s.reason))+'</p></div>';
+    row.innerHTML='<span class="av-step-icon">'+(s.done?"✓":ICONOS.svg(L.skills[s.skill].icon,26))+'</span><div><strong>'+names[s.phase]+' · '+L.skills[s.skill].en+'</strong><p class="nota">'+esc(missionReason(s.reason))+'</p></div>';
     var b=button(row,s.done?"Done":i===next?"Play →":"Later",function(){route("pasoAventura",{index:i});},i===next?"btn-primario":"btn-suave");b.disabled=s.done||i!==next;body.querySelector("#av-steps").appendChild(row);
   });
   if(next<0&&!m.paid){
     var rewards=document.createElement("div");rewards.className="av-build";rewards.innerHTML="<h3>Choose your new building</h3>";body.appendChild(rewards);
-    [["garden","🌳 Garden"],["library","🏠 Library"],["bridge","🌉 Bridge"]].forEach(function(x){button(rewards,x[1],function(){E.build(x[0]);route("aventura");},"btn-primario");});
+    [["garden","Garden"],["library","Library"],["bridge","Bridge"]].forEach(function(x){button(rewards,x[1],function(){E.build(x[0]);route("aventura");},"btn-primario");});
   }
   if(m.paid){var p=document.createElement("p");p.className="av-feedback";p.textContent="Your village grew! You can enjoy free play or come back tomorrow.";body.appendChild(p);}
   button(body,"Free play →",function(){route("casa");},"btn-fantasma");
@@ -216,11 +216,11 @@ function panel(el){
   }
   function gradoCard(title,mundo,icon){var g=grado(mundo);return '<article class="av-grade-card"><span class="av-grade-icon">'+icon+'</span><div><b>'+title+'</b><strong>'+g.grade+'</strong><span>'+(g.pct===null?"—":g.pct+"% observed accuracy")+'</span><small>'+g.note+'</small></div></article>';}
   el.innerHTML='<h3 class="panel-h3">Learning plan</h3><p class="nota">Explorer 1. New check-ins are kept separate from earlier history and rewards. They are not school scores.</p>'+ 
-    '<h3 class="panel-h3">Learning level snapshot</h3><p class="nota">Informal estimate from recent game evidence. The target is 2nd grade; this is not a school certification.</p><div class="av-grade-grid">'+gradoCard("Reading","reading","📚")+gradoCard("Math","math","🔢")+'</div>'+ 
+    '<h3 class="panel-h3">Learning level snapshot</h3><p class="nota">Informal estimate from recent game evidence. The target is 2nd grade; this is not a school certification.</p><div class="av-grade-grid">'+gradoCard("Reading","reading","libro")+gradoCard("Math","math","ladrillos")+'</div>'+ 
     '<p>Next check-in: <b>'+esc(E.due()?"Available when you return":E.nextDate()||"Initial check-in pending")+'</b></p>'+
     '<div class="av-report">'+Object.keys(L.skills).map(function(k){var s=E.summary(k);return '<article><strong>'+L.skills[k].nombre+'</strong><p>'+s.status+'</p><p class="nota">'+s.n+' independent responses at activity level '+s.referenceLevel+' · '+(s.pct===null?"no score":s.pct+"%")+" · "+s.help+" with support · "+s.pending+' unverified</p><p class="nota">Review: '+(a.reviews[k]?L.day(a.reviews[k].due):"not scheduled")+'</p></article>';}).join("")+'</div>'+
     '<h3 class="panel-h3">Saved check-ins</h3><ul>'+a.cycles.map(function(c){return '<li>'+esc((c.type==="inicial"?"Initial":c.type==="semanal"?"Weekly":"Four-week review"))+" · "+L.day(c.started)+" · "+c.cursor+"/"+c.questions.length+" · "+(c.completed?"complete":"paused")+'</li>';}).join("")+'</ul>'+
-    '<h3 class="panel-h3">Schoolwork for today</h3><p class="nota">Take up to five photos of the assignment. They are combined for AI review. Save it first, then analyze it after the diagnostic.</p><div class="av-task-upload"><label class="av-camera-btn" for="av-photo">📷 Take or choose up to 5 photos</label><input id="av-photo" type="file" accept="image/*" capture="environment" multiple class="av-file-hidden"><img id="av-photo-preview" class="av-task-preview" alt="Homework preview" hidden><label>Short title <input id="av-task-title" maxlength="100" placeholder="Reading homework"></label><label>Subject <select id="av-task-subject"><option value="reading">Reading</option><option value="math">Math</option></select></label><label>Skill to focus on <select id="av-task-skill"><option value="">Choose after the diagnostic</option>'+Object.keys(L.skills).map(function(k){return '<option value="'+k+'">'+L.skills[k].nombre+'</option>';}).join("")+'</select></label><label>What does the worksheet ask? <textarea id="av-task-notes" maxlength="500" placeholder="Example: read these words and write 5 answers"></textarea></label><div id="av-task-status" class="nota" role="status"></div></div>'+ 
+    '<h3 class="panel-h3">Schoolwork for today</h3><p class="nota">Take up to five photos of the assignment. They are combined for AI review. Save it first, then analyze it after the diagnostic.</p><div class="av-task-upload"><label class="av-camera-btn" for="av-photo">Take or choose up to 5 photos</label><input id="av-photo" type="file" accept="image/*" capture="environment" multiple class="av-file-hidden"><img id="av-photo-preview" class="av-task-preview" alt="Homework preview" hidden><label>Short title <input id="av-task-title" maxlength="100" placeholder="Reading homework"></label><label>Subject <select id="av-task-subject"><option value="reading">Reading</option><option value="math">Math</option></select></label><label>Skill to focus on <select id="av-task-skill"><option value="">Choose after the diagnostic</option>'+Object.keys(L.skills).map(function(k){return '<option value="'+k+'">'+L.skills[k].nombre+'</option>';}).join("")+'</select></label><label>What does the worksheet ask? <textarea id="av-task-notes" maxlength="500" placeholder="Example: read these words and write 5 answers"></textarea></label><div id="av-task-status" class="nota" role="status"></div></div>'+ 
     '<h3 class="panel-h3">School materials</h3><p class="nota">These are review materials and may not be the current homework.</p><label>Prioritize a set <select id="av-task">'+L.tasks.map(function(t){return '<option value="'+t.id+'">'+t.nombre+'</option>';}).join("")+'</select></label><p id="av-task-info" class="nota"></p>'+
     '<label>Reading focus <select id="av-read"><option value="">Based on observations</option>'+Object.keys(L.skills).filter(function(k){return L.skills[k].mundo==="reading";}).map(function(k){return '<option value="'+k+'">'+L.skills[k].nombre+'</option>';}).join("")+'</select></label>'+
     '<label>Math focus <select id="av-math"><option value="">Based on observations</option>'+Object.keys(L.skills).filter(function(k){return L.skills[k].mundo==="math";}).map(function(k){return '<option value="'+k+'">'+L.skills[k].nombre+'</option>';}).join("")+'</select></label>'+
@@ -334,7 +334,7 @@ g.AVENTURA={
     screens.diag=function(el,opts){
       if(opts&&opts.cycle){var E=engine(),c=E.data.cycles.find(function(x){return x.id===opts.cycle;});if(c&&c.completed){
         E.rewardCycle(c);var b=shell(el,"Your adventure is ready!","Your answers help choose your next missions.");
-        b.innerHTML='<div class="av-celebrate">🗺️ ✨ 🏕️</div><p>+15 gems. Your observations are saved.</p>';button(b,"Start my mission →",function(){route("aventura");},"btn-primario btn-grande");return;
+        b.innerHTML='<div class="av-celebrate">'+ICONOS.svg("mapa",46)+ICONOS.svg("esmeralda",46)+ICONOS.svg("carpa",46)+'</div><p>+15 gems. Your observations are saved.</p>';button(b,"Start my mission →",function(){route("aventura");},"btn-primario btn-grande");return;
       }}diagnostic(el);
     };
     screens.aventura=mission;screens.pasoAventura=step;

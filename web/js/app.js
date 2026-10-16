@@ -23,8 +23,8 @@
       '<span class="hud-sep"></span>' +
       '<span class="hud-esm" id="hudEsm">' + esmeraldaSvg(16) +
         '<b>' + e.esmeraldas + '</b></span>' +
-      (e.racha.dias > 1 ? '<span class="hud-racha">🔥 ' + e.racha.dias + '</span>' : '') +
-      '<button class="hud-papa" id="hudPapa" aria-label="Parent dashboard">👤</button>';
+      (e.racha.dias > 1 ? '<span class="hud-racha">' + ICONOS.svg("racha", 16) + e.racha.dias + '</span>' : '') +
+      '<button class="hud-papa" id="hudPapa" aria-label="Parent dashboard">'+ICONOS.svg("adulto",20)+'</button>';
     var a = document.getElementById("hudAvatar");
     if (a) a.addEventListener("click", function () { irA("casa"); });
     var p = document.getElementById("hudPapa");
@@ -452,27 +452,27 @@
   var Retos = (function () {
 
     var CATALOGO = [
-      { id: "verde10", icono: "🟢", meta: 10, pago: 20,
+      { id: "verde10", icono: "tilde", meta: 10, pago: 20,
         tit: "Get 10 words right",
         sub: "Read or spell each one correctly on the first try",
         cuenta: function (e) { return semaforosHoy(e, "verde"); } },
 
-      { id: "spell5", icono: "✏️", meta: 5, pago: 25,
+      { id: "spell5", icono: "lapiz", meta: 5, pago: 25,
         tit: "Spell 5 words",
         sub: "Play Spelling without using a hint",
         cuenta: function (e) { return semaforosHoy(e, "verde", "encoding"); } },
 
-      { id: "math15", icono: "🔢", meta: 15, pago: 20,
+      { id: "math15", icono: "mas", meta: 15, pago: 20,
         tit: "Get 15 correct answers in Math",
         sub: "Play any game in the Math world",
         cuenta: function (e) { return aciertosHoyMundo(e, "math"); } },
 
-      { id: "niveles3", icono: "🏁", meta: 3, pago: 25,
+      { id: "niveles3", icono: "bandera", meta: 3, pago: 25,
         tit: "Finish 3 levels",
         sub: "Choose any games from either world",
         cuenta: function (e) { return sesionesHoy(e).length; } },
 
-      { id: "cuento1", icono: "📖", meta: 1, pago: 20,
+      { id: "cuento1", icono: "libro", meta: 1, pago: 20,
         tit: "Read a whole story",
         sub: "Then try the Challenger round",
         cuenta: function (e) {
@@ -481,14 +481,14 @@
           }).length;
         } },
 
-      { id: "carrera1", icono: "⚡", meta: 1, pago: 30,
+      { id: "carrera1", icono: "rayo", meta: 1, pago: 30,
         tit: "Try a Speed Run",
         sub: "Choose your own speed",
         cuenta: function (e) {
           return sesionesHoy(e).filter(function (s) { return s.nivel === "carrera"; }).length;
         } },
 
-      { id: "sopa1", icono: "🔎", meta: 1, pago: 20,
+      { id: "sopa1", icono: "lupa", meta: 1, pago: 20,
         tit: "Win a Word Search",
         sub: "Find every word",
         cuenta: function (e) {
@@ -497,7 +497,7 @@
           }).length;
         } },
 
-      { id: "esm50", icono: "💚", meta: 50, pago: 20,
+      { id: "esm50", icono: "esmeralda", meta: 50, pago: 20,
         tit: "Earn 50 gems",
         sub: "Add up gems from all of today’s games",
         cuenta: function (e) {
@@ -605,7 +605,7 @@
       var d = document.createElement("div");
       d.className = "reto" + (x.cobrado ? " reto-cobrado" : x.completo ? " reto-listo" : "");
       d.innerHTML =
-        '<span class="reto-icono">' + x.def.icono + '</span>' +
+        '<span class="reto-icono">' + ICONOS.svg(x.def.icono, 30) + '</span>' +
         '<span class="reto-txt">' +
           '<b>' + U.esc(x.def.tit) + '</b>' +
           '<em>' + U.esc(x.def.sub) + '</em>' +
@@ -637,7 +637,7 @@
     if (Retos.cofreListo()) {
       var cof = document.createElement("button");
       cof.className = "cofre";
-      cof.innerHTML = '<span class="cofre-emoji">🎁</span>' +
+      cof.innerHTML = ICONOS.svg("cofre", 38) +
         '<span>All three challenges complete!<em>Tap to open your chest</em></span>';
       cof.addEventListener("click", function () {
         var p = Retos.abrirCofre();
@@ -924,9 +924,9 @@
   pantallas.explorar = function (el) {
     var e = Alm.leer();
     var places = [
-      { id: "reading", x: 24, y: 48, icon: "📚", title: "READING LIBRARY", detail: "Sight words · stories · spelling" },
-      { id: "math", x: 76, y: 48, icon: "🧮", title: "MATH WORKSHOP", detail: "Number facts · shapes · graphs" },
-      { id: "quest", x: 50, y: 18, icon: "🏁", title: "MISSION PORTAL", detail: "Today's adaptive mission" }
+      { id: "reading", x: 24, y: 48, icon: "libro", title: "READING LIBRARY", detail: "Sight words · stories · spelling" },
+      { id: "math", x: 76, y: 48, icon: "ladrillos", title: "MATH WORKSHOP", detail: "Number facts · shapes · graphs" },
+      { id: "quest", x: 50, y: 18, icon: "bandera", title: "MISSION PORTAL", detail: "Today's adaptive mission" }
     ];
     el.innerHTML =
       '<section class="pantalla av-world-screen">' +

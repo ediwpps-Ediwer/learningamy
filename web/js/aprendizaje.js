@@ -2,17 +2,17 @@
 (function (root) {
   "use strict";
   var SKILLS = {
-    lectura: {nombre:"Oral reading", en:"Word bridge", icon:"🌉", mundo:"reading", modo:"oral", ayuda:"Read each sound, then blend the sounds into a word.", es:"Decí cada sonido y luego unilos para leer la palabra."},
-    dictado: {nombre:"Spelling", en:"Word workshop", icon:"🛠️", mundo:"reading", modo:"dictado", ayuda:"Say the word slowly. Listen for each sound, then write it.", es:"Decí la palabra despacio, escuchá los sonidos y escribila."},
-    escucha: {nombre:"Listening comprehension", en:"Listening grove", icon:"🎧", mundo:"reading", modo:"escuchada", ayuda:"Listen for who is in the story and what happens.", es:"Escuchá quién aparece y qué sucede."},
-    comprension: {nombre:"Reading comprehension", en:"Story library", icon:"📚", mundo:"reading", modo:"leida", ayuda:"Read again. Find the sentence that helps you answer.", es:"Volvé al texto y buscá la frase que ayuda a responder."},
-    operaciones: {nombre:"Addition and subtraction", en:"Build a bridge", icon:"🧱", mundo:"math", modo:"calculo", ayuda:"Use blocks or a number line. Make ten when it helps.", es:"Usá bloques o una recta numérica. Podés completar diez."},
-    numeros: {nombre:"Place value", en:"Block towers", icon:"🏗️", mundo:"math", modo:"valor-posicional", ayuda:"Ten ones make one ten. Count tens, then ones.", es:"Diez unidades forman una decena. Contá decenas y unidades."},
-    formas: {nombre:"Shape attributes", en:"Shape garden", icon:"🔷", mundo:"math", modo:"geometria", ayuda:"Count straight sides and corners. Turn the shape: its name stays the same.", es:"Contá lados rectos y vértices. Girar una figura no cambia su nombre."},
-    graficas: {nombre:"Graph interpretation", en:"Weather station", icon:"📊", mundo:"math", modo:"datos", ayuda:"Check the labels. Count each bar. Compare the amounts.", es:"Mirá las etiquetas y contá cada barra antes de comparar."},
-    calendario: {nombre:"Days and months", en:"Days & Months", icon:"📅", mundo:"math", modo:"calendario", nuevo:true, ayuda:"Put days and months in order and use them to talk about dates.", es:"Ordená los días y los meses para hablar de fechas."},
-    reloj: {nombre:"Time", en:"Clock Lab", icon:"🕒", mundo:"math", modo:"reloj", nuevo:true, ayuda:"Read the hands and match the time on the digital clock.", es:"Leé las agujas y elegí la hora digital."},
-    familias: {nombre:"Word families", en:"Word Families", icon:"🔤", mundo:"reading", modo:"familias", nuevo:true, ayuda:"Read the ending and find another word with the same sound.", es:"Leé la terminación y buscá otra palabra con el mismo sonido."}
+    lectura: {nombre:"Oral reading", en:"Word bridge", icon:"puente", mundo:"reading", modo:"oral", ayuda:"Read each sound, then blend the sounds into a word.", es:"Decí cada sonido y luego unilos para leer la palabra."},
+    dictado: {nombre:"Spelling", en:"Word workshop", icon:"martillo", mundo:"reading", modo:"dictado", ayuda:"Say the word slowly. Listen for each sound, then write it.", es:"Decí la palabra despacio, escuchá los sonidos y escribila."},
+    escucha: {nombre:"Listening comprehension", en:"Listening grove", icon:"auricular", mundo:"reading", modo:"escuchada", ayuda:"Listen for who is in the story and what happens.", es:"Escuchá quién aparece y qué sucede."},
+    comprension: {nombre:"Reading comprehension", en:"Story library", icon:"libro", mundo:"reading", modo:"leida", ayuda:"Read again. Find the sentence that helps you answer.", es:"Volvé al texto y buscá la frase que ayuda a responder."},
+    operaciones: {nombre:"Addition and subtraction", en:"Build a bridge", icon:"ladrillos", mundo:"math", modo:"calculo", ayuda:"Use blocks or a number line. Make ten when it helps.", es:"Usá bloques o una recta numérica. Podés completar diez."},
+    numeros: {nombre:"Place value", en:"Block towers", icon:"torre", mundo:"math", modo:"valor-posicional", ayuda:"Ten ones make one ten. Count tens, then ones.", es:"Diez unidades forman una decena. Contá decenas y unidades."},
+    formas: {nombre:"Shape attributes", en:"Shape garden", icon:"formas", mundo:"math", modo:"geometria", ayuda:"Count straight sides and corners. Turn the shape: its name stays the same.", es:"Contá lados rectos y vértices. Girar una figura no cambia su nombre."},
+    graficas: {nombre:"Graph interpretation", en:"Weather station", icon:"grafica", mundo:"math", modo:"datos", ayuda:"Check the labels. Count each bar. Compare the amounts.", es:"Mirá las etiquetas y contá cada barra antes de comparar."},
+    calendario: {nombre:"Days and months", en:"Days & Months", icon:"calendario", mundo:"math", modo:"calendario", nuevo:true, ayuda:"Put days and months in order and use them to talk about dates.", es:"Ordená los días y los meses para hablar de fechas."},
+    reloj: {nombre:"Time", en:"Clock Lab", icon:"reloj", mundo:"math", modo:"reloj", nuevo:true, ayuda:"Read the hands and match the time on the digital clock.", es:"Leé las agujas y elegí la hora digital."},
+    familias: {nombre:"Word families", en:"Word Families", icon:"letras", mundo:"reading", modo:"familias", nuevo:true, ayuda:"Read the ending and find another word with the same sound.", es:"Leé la terminación y buscá otra palabra con el mismo sonido."}
   };
   var STORIES = [
     ["Sam has a red bag. He puts a map in the bag. Then he walks to the park.","What does Sam put in the bag?","a map",["a hat","a map","a cup"]],
