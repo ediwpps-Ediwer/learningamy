@@ -8,11 +8,13 @@ const schema = {
     title: { type: "string" }, subject: { type: "string", enum: ["reading", "math"] },
     skill: { type: "string", enum: ["lectura", "dictado", "escucha", "comprension", "operaciones", "numeros", "formas", "graficas"] },
     objective: { type: "string" }, difficulty: { type: "integer", enum: [0, 1, 2] },
+    readItems: { type: "array", minItems: 1, maxItems: 14, items: { type: "string" } },
+    readConfidence: { type: "string", enum: ["alta", "media", "baja"] },
     steps: { type: "array", minItems: 4, maxItems: 4, items: { type: "object", additionalProperties: false,
       properties: { phase: { type: "string", enum: ["recordar", "aprender", "resolver", "demostrar"] }, instruction: { type: "string" }, game: { type: "string" } }, required: ["phase", "instruction", "game"] } },
     transfer: { type: "array", minItems: 2, maxItems: 2, items: { type: "string" } },
     adultCheck: { type: "string" }, uncertain: { type: "array", items: { type: "string" } }
-  }, required: ["title", "subject", "skill", "objective", "difficulty", "steps", "transfer", "adultCheck", "uncertain"]
+  }, required: ["title", "subject", "skill", "objective", "difficulty", "readItems", "readConfidence", "steps", "transfer", "adultCheck", "uncertain"]
 };
 exports.handler = async function (event) {
   if (event.httpMethod !== "POST") return reply(405, { error: "method_not_allowed" });
@@ -37,7 +39,7 @@ exports.handler = async function (event) {
   recent.push(now); seen.set(ip, recent);
   const task = body.task || {}, skills = ALLOWED_SKILLS;
   const diagnostic = Array.isArray(body.diagnostic) ? body.diagnostic.slice(0, 8).map(x => ({ skill: skills.has(x.skill) ? x.skill : "", level: Math.max(0, Math.min(2, Number(x.level) || 0)), status: String(x.status || "").slice(0, 40) })) : [];
-  const instructions = "Analyze the photo of a school assignment and adapt it for a second-grade student who is learning to read. Preserve the academic goal. Treat difficulty as provisional guidance for practice, never as proof of a school grade level. Use recent diagnostic observations if provided. Do not copy names, school names, identifiers, or personal details visible in the photo. If an instruction is unreadable, mark the uncertainty in uncertain and do not guess. Create four short phases with playable steps, simple reading, and gradual support. Write every child-facing instruction and adultCheck in clear American English. Do not provide answers to school assessments. Return only the requested schema.";
+  const instructions = "Analyze the photo of a school assignment and adapt it for a second-grade student who is learning to read. Preserve the academic goal. Treat difficulty as provisional guidance for practice, never as proof of a school grade level. Use recent diagnostic observations if provided. Do not copy names, school names, identifiers, or personal details visible in the photo. First transcribe the assignment: copy into readItems, verbatim and in order, the exercises, words, numbers or questions actually printed or written on the sheet, one per entry, without rewording or solving them. Never invent an item that is not visible. Set readConfidence to how legible the sheet was. Exclude the student name, teacher name, school name and any identifier from readItems. Only after transcribing, adapt. If an instruction is unreadable, mark the uncertainty in uncertain and do not guess. Create four short phases with playable steps, simple reading, and gradual support. Write every child-facing instruction and adultCheck in clear American English. Do not provide answers to school assessments. Return only the requested schema.";
   const inputText = JSON.stringify({ task: { title: String(task.title || "").slice(0, 100), subject: String(task.subject || "").slice(0, 20), skill: skills.has(task.skill) ? task.skill : "", notes: String(task.notes || "").slice(0, 500) }, diagnostic });
   let upstream;
   try {
@@ -76,6 +78,9 @@ exports.handler = async function (event) {
       !Array.isArray(adaptation.steps) || adaptation.steps.length!==4 ||
       !phases.every(p=>adaptation.steps.filter(s=>s && s.phase===p && typeof s.instruction==="string" && typeof s.game==="string").length===1) ||
       !Array.isArray(adaptation.transfer) || adaptation.transfer.length!==2 || !adaptation.transfer.every(x=>typeof x==="string") ||
+      !Array.isArray(adaptation.readItems) || !adaptation.readItems.length || adaptation.readItems.length>14 ||
+      !adaptation.readItems.every(x=>typeof x==="string" && x.trim()) ||
+      !["alta","media","baja"].includes(adaptation.readConfidence) ||
       !Array.isArray(adaptation.uncertain) || !adaptation.uncertain.every(x=>typeof x==="string"))
     return reply(502,{error:"ai_invalid_result",message:"El análisis no tiene todos los pasos necesarios. Intenta nuevamente."});
   return reply(200, { adaptation, usage: data.usage ? { input_tokens: data.usage.input_tokens, output_tokens: data.usage.output_tokens } : null });

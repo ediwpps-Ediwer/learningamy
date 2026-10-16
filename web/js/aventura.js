@@ -232,11 +232,65 @@ function panel(el){
   el.querySelector("#av-photo").onchange=function(ev){var files=ev.target.files;if(!files||!files.length)return;var count=Math.min(files.length,5);reducirFotos(files,function(data){var pv=el.querySelector("#av-photo-preview");pv.src=data;pv.hidden=false;pv.dataset.data=data;el.querySelector("#av-task-status").textContent=count+" photo"+(count===1?"":"s")+" ready. Press Save task before analyzing.";});};
   button(el.querySelector(".av-task-upload"),"Save task and make it active",function(){var pv=el.querySelector("#av-photo-preview"),data=pv.dataset.data||photo;E.setTask({title:el.querySelector("#av-task-title").value,subject:el.querySelector("#av-task-subject").value,skill:el.querySelector("#av-task-skill").value,notes:el.querySelector("#av-task-notes").value,imageKey:data?"local":null});if(data)N.Almacen.guardarImagenTarea(data);el.querySelector("#av-task-status").textContent="Task saved and active for the next mission. You can analyze it with AI for a richer adaptation.";}, "btn-suave");
   var aiBox=document.createElement("section");aiBox.id="av-ai-result";aiBox.setAttribute("aria-live","polite");
+  /* El plan que devuelve la IA es interpretacion. Antes de aprobarlo hay que
+     poder revisar lo OTRO: que leyo de la hoja. Si confundio un numero, el plan
+     igual se ve razonable y el error se vuelve invisible justo cuando se revisa.
+     Por eso la transcripcion va primero, al lado de la foto, y el boton de
+     aprobar no aparece hasta confirmar que la lectura esta bien. */
   function showPlan(plan,applied){
     if(!plan)return;
-    aiBox.innerHTML='<article class="av-ai-card"><h4>'+(applied?"Adaptation ready for the next mission":"Adaptation proposal · waiting for your approval")+'</h4><p><b>Task:</b> '+esc(plan.title)+'</p><p><b>School objective:</b> '+esc(plan.objective)+'</p><p><b>Priority skill:</b> '+esc(L.skills[plan.skill]?L.skills[plan.skill].nombre:plan.skill)+'</p><p><b>Suggested practice:</b> '+esc(String(plan.difficulty))+' · practice guidance, not a school score</p><h5>How it becomes a game</h5><ol>'+plan.steps.map(function(x){return '<li><b>'+esc(x.phase)+'</b>: '+esc(x.instruction)+' <span class="nota">Game: '+esc(x.game)+'</span></li>';}).join("")+'</ol><p><b>Check against the original assignment:</b> '+plan.transfer.map(esc).join(" · ")+'</p><p class="nota"><b>Parent review:</b> '+esc(plan.adultCheck)+(plan.uncertain.length?" · Questions: "+plan.uncertain.map(esc).join(" · "):"")+'</p></article>';
-    if(!applied)button(aiBox,"Approve for the next mission",function(){var current=E.data.task||{};E.setTask({title:plan.title,subject:plan.subject,skill:plan.skill,objective:plan.objective,notes:current.notes,imageKey:current.imageKey,analysis:null,adaptation:plan});showPlan(plan,true);el.querySelector("#av-task-status").textContent="Adaptation saved. The next mission will use this plan, and the details will stay in the dashboard.";},"btn-primario");
+    var items=Array.isArray(plan.readItems)?plan.readItems:[];
+    var conf=plan.readConfidence||"";
+    var avisoConf=conf==="baja"?"The photo was hard to read. Check every line."
+                 :conf==="media"?"Parts of the photo were unclear. Check carefully."
+                 :"The photo was legible.";
+    var foto=N.Almacen.leerImagenTarea();
+
+    aiBox.innerHTML=
+      (items.length?'<article class="av-ai-card av-read-card"><h4>1 · What the AI read on the sheet</h4>'+
+        '<p class="nota">Compare this with the paper before approving anything. If one line is wrong, the whole plan practices the wrong thing.</p>'+
+        '<div class="av-read-split">'+
+          (foto?'<img class="av-read-photo" src="'+foto+'" alt="Photo of the assignment">':'')+
+          '<ol class="av-read-items">'+items.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ol>'+
+        '</div>'+
+        '<p class="av-read-conf av-conf-'+esc(conf)+'">Legibility: '+esc(conf||"unknown")+' · '+avisoConf+'</p>'+
+        (plan.uncertain&&plan.uncertain.length?'<p class="nota"><b>The AI could not read:</b> '+plan.uncertain.map(esc).join(" · ")+'</p>':'')+
+        '<div class="av-read-acc"></div></article>':'')+
+      '<article class="av-ai-card"><h4>'+(items.length?'2 · ':'')+(applied?"Adaptation ready for the next mission":"Adaptation proposal")+'</h4><p><b>Task:</b> '+esc(plan.title)+'</p><p><b>School objective:</b> '+esc(plan.objective)+'</p><p><b>Priority skill:</b> '+esc(L.skills[plan.skill]?L.skills[plan.skill].nombre:plan.skill)+'</p><p><b>Suggested practice:</b> '+esc(String(plan.difficulty))+' · practice guidance, not a school score</p><h5>How it becomes a game</h5><ol>'+plan.steps.map(function(x){return '<li><b>'+esc(x.phase)+'</b>: '+esc(x.instruction)+' <span class="nota">Game: '+esc(x.game)+'</span></li>';}).join("")+'</ol><p><b>Check against the original assignment:</b> '+plan.transfer.map(esc).join(" · ")+'</p><p class="nota"><b>Parent review:</b> '+esc(plan.adultCheck)+'</p><div class="av-approve"></div></article>';
+
+    if(applied)return;
+    var zonaOk=aiBox.querySelector(".av-read-acc");
+    var zonaAprobar=aiBox.querySelector(".av-approve");
+
+    function aprobar(){
+      button(zonaAprobar,"Approve for the next mission",function(){
+        var current=E.data.task||{};
+        E.setTask({title:plan.title,subject:plan.subject,skill:plan.skill,objective:plan.objective,notes:current.notes,imageKey:current.imageKey,analysis:null,adaptation:plan});
+        showPlan(plan,true);
+        el.querySelector("#av-task-status").textContent="Adaptation saved. The next mission will use this plan, and the details will stay in the dashboard.";
+      },"btn-primario");
+    }
+
+    if(!items.length){ aprobar(); return; }   // analisis viejo, sin transcripcion
+
+    var nota=document.createElement("p");
+    nota.className="nota";
+    nota.textContent="Confirm the reading to unlock approval.";
+    zonaAprobar.appendChild(nota);
+
+    button(zonaOk,"✓ It read the sheet correctly",function(){
+      zonaOk.innerHTML='<p class="av-read-ok">✓ Reading confirmed by you.</p>';
+      zonaAprobar.innerHTML="";
+      aprobar();
+    },"btn-primario");
+
+    button(zonaOk,"✗ It read something wrong",function(){
+      zonaOk.innerHTML='<p class="av-read-mal">✗ Marked as a bad reading. Nothing was saved for the game.</p>';
+      zonaAprobar.innerHTML='<p class="nota">Take a clearer photo — flat, good light, no shadow over the text — and analyze it again. You can also write what it got wrong in the notes field so the next analysis takes it into account.</p>';
+      el.querySelector("#av-task-status").textContent="Bad reading. The plan was discarded; repeat the photo.";
+    },"btn-fantasma");
   }
+
   if(savedTask.analysis)showPlan(savedTask.analysis,false);else if(savedTask.adaptation)showPlan(savedTask.adaptation,true);
   button(el.querySelector(".av-task-upload"),"Analyze task with AI",async function(ev){
     var btn=ev.currentTarget,pv=el.querySelector("#av-photo-preview"),image=pv.dataset.data||photo;
